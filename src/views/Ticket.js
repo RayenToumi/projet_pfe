@@ -1,6 +1,7 @@
 import React from "react";
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
+import { Link } from "react-router-dom";
 
 function NewTicketForm() {
   return (
@@ -20,7 +21,9 @@ function NewTicketForm() {
               
               <h1 style={titleStyle}>🎫 Nouveau Ticket STB</h1>
             </div>
+            <Link to="MyTickets">
             <button style={returnButtonStyle}>← Retour à la liste</button>
+            </Link>
           </div>
 
           <div style={formSection}>
@@ -28,7 +31,7 @@ function NewTicketForm() {
               <label style={labelStyle}>📝 Sujet</label>
               <input
                 type="text"
-                placeholder="Ex: Mon accès internet est bloqué"
+                placeholder="Ex: Échec de virement en ligne via l'application mobile"
                 style={inputStyle}
               />
             </div>

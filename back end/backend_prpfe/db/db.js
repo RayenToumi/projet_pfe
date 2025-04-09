@@ -1,7 +1,12 @@
-const mongoose =require("mongoose")
-module.exports.connectToMongoDb = async () =>{
-    mongoose.set('strictQuery',false);
-    mongoose.connect(process.env.Url_MongoDB).then()
-    () => console.log("connect to db")
+const mongoose = require('mongoose');
 
+
+module.exports.connectToMongoDB = async () => {
+    try {
+        mongoose.set('strictQuery', false);
+        await mongoose.connect(process.env.Url_MongoDB);
+        console.log('Connected to Data base'); 
+    } catch (err) {
+        (err) => console.log(err.message)
+    }
 }
