@@ -10,7 +10,7 @@ function NewTicketForm() {
 
       <div style={pageWrapper}>
         <img
-          src="https://www.cbf.org.tn/wp-content/uploads/2023/08/0001-1-scaled.jpg"
+          src="https://www.millim.tn/media/uploads/2023/07/26/stb.webp"
           alt="background"
           style={backgroundImageStyle}
         />
@@ -18,11 +18,10 @@ function NewTicketForm() {
         <div style={ticketCard}>
           <div style={headerSection}>
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-              
               <h1 style={titleStyle}>🎫 Nouveau Ticket STB</h1>
             </div>
             <Link to="MyTickets">
-            <button style={returnButtonStyle}>← Retour à la liste</button>
+              <button style={returnButtonStyle}>← Retour à la liste</button>
             </Link>
           </div>
 
@@ -42,6 +41,15 @@ function NewTicketForm() {
                 <option>IT - Informatique</option>
                 <option>RH - Ressources Humaines</option>
                 <option>Comptabilité</option>
+              </select>
+            </div>
+
+            <div style={inputGroup}>
+              <label style={labelStyle}>⚠️ Type de ticket</label>
+              <select style={selectStyle}>
+                <option>Urgent</option>
+                <option>Normal</option>
+                <option>Faible priorité</option>
               </select>
             </div>
 
@@ -66,7 +74,7 @@ function NewTicketForm() {
   );
 }
 
-// 🎨 Styles améliorés avec image de fond et effet verre
+// 🎨 Styles
 const pageWrapper = {
   position: "relative",
   fontFamily: "'Segoe UI', sans-serif",
@@ -85,8 +93,6 @@ const backgroundImageStyle = {
   width: "100%",
   height: "100%",
   objectFit: "cover",
-  filter: "blur(6px) brightness(0.9)",
-  zIndex: -1,
 };
 
 const ticketCard = {
@@ -110,12 +116,6 @@ const titleStyle = {
   fontSize: "1.9rem",
   fontWeight: "700",
   color: "#0d47a1",
-};
-
-const logoStyle = {
-  width: "60px",
-  height: "60px",
-  objectFit: "contain",
 };
 
 const returnButtonStyle = {

@@ -39,7 +39,7 @@ function MyTickets() {
       <div style={pageWrapper}>
         {/* Nouveau fond ajouté ici */}
         <img
-          src="https://www.cbf.org.tn/wp-content/uploads/2023/08/0001-1-scaled.jpg"
+           src="https://www.millim.tn/media/uploads/2023/07/26/stb.webp"
           alt="background"
           style={backgroundImageStyle}
         />
@@ -107,8 +107,7 @@ const backgroundImageStyle = {
   width: "100%",
   height: "100%",
   objectFit: "cover",
-  filter: "blur(6px) brightness(0.9)",  // Appliquer le flou et la luminosité
-  zIndex: -1,
+
 };
 
 const glassCard = {

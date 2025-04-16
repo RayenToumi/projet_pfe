@@ -8,7 +8,9 @@ const styles = `
     text-align: center;
     text-transform: uppercase;
     color: darkblue;
-    font-size: 2em;
+    font-size: 2.5em;
+    margin-bottom: 2rem;
+    font-weight: bold;
   }
 
   .fixed-dialog-container {
@@ -22,16 +24,16 @@ const styles = `
     align-items: flex-start;
     justify-content: center;
     z-index: 50;
-    padding-top: 1rem;
+    padding-top: 2rem;
   }
 
   .dialog-content {
-    background-color: aliceblue;
-    padding: 1.5rem;
+    background-color: #f7fafc;
+    padding: 2rem;
     border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    max-width: 24rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     width: 100%;
+    max-width: 30rem;
   }
 
   .modal-container {
@@ -51,88 +53,174 @@ const styles = `
     background-color: white;
     padding: 2rem;
     border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    max-width: 24rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     width: 100%;
+    max-width: 30rem;
   }
 
   .modal-content input,
   .modal-content select {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.75rem;
     margin-bottom: 1rem;
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
     border-radius: 0.25rem;
+    transition: all 0.3s;
+  }
+
+  .modal-content input:focus,
+  .modal-content select:focus {
+    border-color: #3182ce;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 122, 255, 0.5);
   }
 
   .modal-content button {
-    padding: 0.5rem 1rem;
-    border: none;
+    padding: 0.75rem 1.5rem;
     border-radius: 0.25rem;
     cursor: pointer;
+    transition: background-color 0.3s;
   }
 
   .modal-content button.cancel {
-    background-color: #ccc;
-    margin-right: 0.5rem;
+    background-color: #e2e8f0;
+    margin-right: 1rem;
+    color: #4a5568;
+  }
+
+  .modal-content button.cancel:hover {
+    background-color: #cbd5e0;
   }
 
   .modal-content button.submit {
-    background-color: #4CAF50;
+    background-color: #38a169;
     color: white;
+  }
+
+  .modal-content button.submit:hover {
+    background-color: #2f855a;
   }
 
   .error-message {
     color: red;
     font-size: 0.875rem;
     margin-bottom: 1rem;
+    font-weight: bold;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    padding: 1.5rem;
+    background-color: #f7fafc;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+  }
+
+  th,
+  td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  th {
+    background-color: #edf2f7;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  td {
+    font-size: 0.9rem;
+    color: #2d3748;
+  }
+
+  td button {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  td button:hover {
+    opacity: 0.85;
+  }
+
+  .btn-edit {
+    background-color: #fbbf24;
+    color: white;
+  }
+
+  .btn-delete {
+    background-color: #e53e3e;
+    color: white;
+  }
+
+  .btn-add {
+    background-color: #3182ce;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+
+  .btn-add:hover {
+    background-color: #2b6cb0;
   }
 `;
 
-export default function CardDepartment({ color = "light" }) {
+export default function CardTechnician({ color = "light" }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("");
-  const [departments, setDepartments] = useState([
-    { id: 1, departement: "Informatique" },
-    { id: 2, departement: "Ressources Humaines" },
-    { id: 3, departement: "Finance" },
+  const [technicians, setTechnicians] = useState([
+    { id: 1, technicien: "Informatique" },
+    { id: 2, technicien: "Ressources Humaines" },
+    { id: 3, technicien: "Finance" },
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState(null);
-  const [selectedDepartmentName, setSelectedDepartmentName] = useState("");
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState(null);
+  const [selectedTechnicianName, setSelectedTechnicianName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [newDepartment, setNewDepartment] = useState({
-    departement: "",
+  const [newTechnician, setNewTechnician] = useState({
+    technicien: "",
   });
-  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [selectedTechnician, setSelectedTechnician] = useState(null);
   const [errors, setErrors] = useState({});
 
-  const filteredDepartments = departments
-    .filter((department) => {
+  const filteredTechnicians = technicians
+    .filter((technician) => {
       if (!isNaN(searchTerm)) {
-        return department.id.toString().includes(searchTerm);
+        return technician.id.toString().includes(searchTerm);
       }
-      return department.departement.toLowerCase().includes(searchTerm.toLowerCase());
+      return technician.technicien.toLowerCase().includes(searchTerm.toLowerCase());
     })
     .sort((a, b) => {
       if (!sortOption) return 0;
       if (sortOption === "id-asc") return a.id - b.id;
       if (sortOption === "id-desc") return b.id - a.id;
-      if (sortOption === "departement") return a.departement.localeCompare(b.departement);
+      if (sortOption === "technicien") return a.technicien.localeCompare(b.technicien);
       return 0;
     });
 
-  const handleAction = (action, id, departement) => {
+  const handleAction = (action, id, technicien) => {
     switch (action) {
       case "modifier":
-        const departmentToEdit = departments.find((department) => department.id === id);
-        setSelectedDepartment(departmentToEdit);
+        const technicianToEdit = technicians.find((technician) => technician.id === id);
+        setSelectedTechnician(technicianToEdit);
         setIsEditModalOpen(true);
         break;
       case "supprimer":
-        setSelectedDepartmentId(id);
-        setSelectedDepartmentName(departement);
+        setSelectedTechnicianId(id);
+        setSelectedTechnicianName(technicien);
         setIsDialogOpen(true);
         break;
       default:
@@ -141,23 +229,23 @@ export default function CardDepartment({ color = "light" }) {
   };
 
   const handleConfirmDelete = () => {
-    setDepartments(departments.filter((department) => department.id !== selectedDepartmentId));
+    setTechnicians(technicians.filter((technician) => technician.id !== selectedTechnicianId));
     setIsDialogOpen(false);
-    setSelectedDepartmentName("");
+    setSelectedTechnicianName("");
   };
 
   const handleCancelDelete = () => {
     setIsDialogOpen(false);
-    setSelectedDepartmentName("");
+    setSelectedTechnicianName("");
   };
 
-  const handleAddDepartment = () => {
+  const handleAddTechnician = () => {
     setIsModalOpen(true);
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!newDepartment.departement) newErrors.departement = "Le département est obligatoire.";
+    if (!newTechnician.technicien) newErrors.technicien = "Le technicien est obligatoire.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -165,22 +253,22 @@ export default function CardDepartment({ color = "light" }) {
   const handleModalSubmit = () => {
     if (!validateForm()) return;
 
-    const newDepartmentEntry = {
-      id: departments.length + 1,
-      departement: newDepartment.departement,
+    const newTechnicianEntry = {
+      id: technicians.length + 1,
+      technicien: newTechnician.technicien,
     };
-    setDepartments([...departments, newDepartmentEntry]);
+    setTechnicians([...technicians, newTechnicianEntry]);
     setIsModalOpen(false);
-    setNewDepartment({
-      departement: "",
+    setNewTechnician({
+      technicien: "",
     });
     setErrors({});
   };
 
   const handleModalCancel = () => {
     setIsModalOpen(false);
-    setNewDepartment({
-      departement: "",
+    setNewTechnician({
+      technicien: "",
     });
     setErrors({});
   };
@@ -188,11 +276,11 @@ export default function CardDepartment({ color = "light" }) {
   const handleEditSubmit = () => {
     if (validateForm()) return;
 
-    const updatedDepartments = departments.map((department) =>
-      department.id === selectedDepartment.id ? { ...selectedDepartment } : department
+    const updatedTechnicians = technicians.map((technician) =>
+      technician.id === selectedTechnician.id ? { ...selectedTechnician } : technician
     );
 
-    setDepartments(updatedDepartments);
+    setTechnicians(updatedTechnicians);
     setIsEditModalOpen(false);
   };
 
@@ -211,7 +299,7 @@ export default function CardDepartment({ color = "light" }) {
           <div className="fixed-dialog-container">
             <div className="dialog-content">
               <p className="text-lg text-gray-700 mb-4">
-                Êtes-vous sûr de vouloir supprimer le département  <strong>{selectedDepartmentName}</strong> ?
+                Êtes-vous sûr de vouloir supprimer le technicien <strong>{selectedTechnicianName}</strong> ?
               </p>
               <div className="flex justify-end space-x-4">
                 <button
@@ -231,17 +319,17 @@ export default function CardDepartment({ color = "light" }) {
           </div>
         )}
 
-        {/* Modal pour ajouter un département */}
+        {/* Modal pour ajouter un technicien */}
         {isModalOpen && (
           <div className="modal-container">
             <div className="modal-content">
-              <h2 className="text-lg font-semibold mb-4">Ajouter un département</h2>
-              {errors.departement && <div className="error-message">{errors.departement}</div>}
+              <h2 className="text-lg font-semibold mb-4">Ajouter un technicien</h2>
+              {errors.technicien && <div className="error-message">{errors.technicien}</div>}
               <input
                 type="text"
-                placeholder="Département"
-                value={newDepartment.departement}
-                onChange={(e) => setNewDepartment({ ...newDepartment, departement: e.target.value })}
+                placeholder="Technicien"
+                value={newTechnician.technicien}
+                onChange={(e) => setNewTechnician({ ...newTechnician, technicien: e.target.value })}
               />
               <div className="flex justify-end">
                 <button onClick={handleModalCancel} className="cancel">
@@ -255,16 +343,16 @@ export default function CardDepartment({ color = "light" }) {
           </div>
         )}
 
-        {/* Modal pour modifier un département */}
-        {isEditModalOpen && selectedDepartment && (
+        {/* Modal pour modifier un technicien */}
+        {isEditModalOpen && selectedTechnician && (
           <div className="modal-container">
             <div className="modal-content">
-              <h2 className="text-lg font-semibold mb-4">Modifier le département</h2>
+              <h2 className="text-lg font-semibold mb-4">Modifier le technicien</h2>
               <input
                 type="text"
-                placeholder="Département"
-                value={selectedDepartment.departement}
-                onChange={(e) => setSelectedDepartment({ ...selectedDepartment, departement: e.target.value })}
+                placeholder="Technicien"
+                value={selectedTechnician.technicien}
+                onChange={(e) => setSelectedTechnician({ ...selectedTechnician, technicien: e.target.value })}
               />
               <div className="flex justify-end">
                 <button onClick={handleEditCancel} className="cancel">
@@ -278,11 +366,11 @@ export default function CardDepartment({ color = "light" }) {
           </div>
         )}
 
-        <div className="titre"><h1>Gestion des départements</h1></div>
+        <div className="titre"><h1>Les Techniciens</h1></div>
         <div className="rounded-t mb-0 px-4 py-3 border-0">
           <div className="flex flex-wrap items-center justify-between">
             <h3 className={"font-semibold text-lg " + (color === "light" ? "text-blueGray-700" : "text-white")}>
-              Liste des départements
+              Liste des Techniciens
             </h3>
           </div>
           <div className="flex flex-wrap items-center justify-between mt-4">
@@ -295,7 +383,7 @@ export default function CardDepartment({ color = "light" }) {
                 <option value="" disabled>Filtrer par</option>
                 <option value="id-asc">ID Ascendant</option>
                 <option value="id-desc">ID Descendant</option>
-                <option value="departement">Par Département</option>
+                <option value="technicien">Par Technicien</option>
               </select>
               <input
                 type="text"
@@ -306,18 +394,18 @@ export default function CardDepartment({ color = "light" }) {
               />
             </div>
             <button
-              onClick={handleAddDepartment}
-              className="px-4 py-2 rounded-lg font-semibold text-btn-ajouterp bg-blue-500 hover:bg-blue-600 focus:outline-none"
+              onClick={handleAddTechnician}
+              className="btn-add"
             >
-              Ajouter un département
+              Ajouter un technicien
             </button>
           </div>
         </div>
-        <div className="block w-full overflow-x-auto">
-          <table className="items-center w-full bg-transparent border-collapse">
+        <div className="table-container">
+          <table>
             <thead>
               <tr>
-                {["Id", "Département", "Action"].map((header, index) => (
+                {["Id", "Technicien", "Action"].map((header, index) => (
                   <th key={index} className="px-6 py-3 text-xs uppercase font-semibold text-left bg-blueGray-50 text-blueGray-500 border-blueGray-100">
                     {header}
                   </th>
@@ -325,16 +413,16 @@ export default function CardDepartment({ color = "light" }) {
               </tr>
             </thead>
             <tbody>
-              {filteredDepartments.length > 0 ? (
-                filteredDepartments.map((department) => (
-                  <tr key={department.id}>
-                    <td className="px-6 py-4 border-b border-gray-200 text-sm">{department.id}</td>
-                    <td className="px-6 py-4 border-b border-gray-200 text-sm">{department.departement}</td>
+              {filteredTechnicians.length > 0 ? (
+                filteredTechnicians.map((technician) => (
+                  <tr key={technician.id}>
+                    <td className="px-6 py-4 border-b border-gray-200 text-sm">{technician.id}</td>
+                    <td className="px-6 py-4 border-b border-gray-200 text-sm">{technician.technicien}</td>
                     <td className="px-6 py-4 border-b border-gray-200 text-sm">
-                      <button onClick={() => handleAction("modifier", department.id, department.departement)} className="bg-yellow-500 text-white p-2 rounded mr-2">
+                      <button onClick={() => handleAction("modifier", technician.id, technician.technicien)} className="btn-edit">
                         <MdEdit />
                       </button>
-                      <button onClick={() => handleAction("supprimer", department.id, department.departement)} className="bg-red-500 text-white p-2 rounded">
+                      <button onClick={() => handleAction("supprimer", technician.id, technician.technicien)} className="btn-delete">
                         <MdDelete />
                       </button>
                     </td>
@@ -355,6 +443,6 @@ export default function CardDepartment({ color = "light" }) {
   );
 }
 
-CardDepartment.propTypes = {
+CardTechnician.propTypes = {
   color: PropTypes.string,
 };
