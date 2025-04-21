@@ -1,215 +1,124 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
 
 function MyTickets() {
+  const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
 
-  const tickets = [
-    {
-      id: 1,
-      sujet: "Connexion VPN bloquée",
-      departement: "IT",
-      statut: "Ouvert",
-      date: "2025-04-04",
-      description: "Je n'arrive plus à me connecter au VPN depuis ce matin.",
-    },
-    {
-      id: 2,
-      sujet: "Erreur sur fiche de paie",
-      departement: "RH",
-      statut: "En cours",
-      date: "2025-04-01",
-      description: "Il y a une erreur dans le montant net affiché.",
-    },
-    {
-      id: 3,
-      sujet: "Problème d'accès à l'intranet",
-      departement: "IT",
-      statut: "Résolu",
-      date: "2025-03-29",
-      description: "Le site intranet était inaccessible depuis plusieurs jours.",
-    },
-  ];
+  useEffect(() => {
+    document.body.style.margin = "0";
+    document.body.style.minHeight = "100vh";
+    document.body.style.display = "flex";
+    document.body.style.flexDirection = "column";
+
+    // Récupère les tickets depuis localStorage
+    const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+    setTickets(storedTickets);
+  }, []);
+
+  const status = (statut) => ({
+    padding: "0.3rem 0.8rem",
+    borderRadius: "4px",
+    fontSize: "0.85rem",
+    backgroundColor: {
+      "Ouvert": "#ffebee",
+      "En cours": "#e3f2fd",
+      "Résolu": "#e8f5e9",
+    }[statut],
+    color: {
+      "Ouvert": "#c62828",
+      "En cours": "#1565c0",
+      "Résolu": "#2e7d32",
+    }[statut],
+    fontWeight: "bold",
+  });
 
   return (
     <>
       <IndexNavbar />
+      <div style={container}>
+        <div style={contentWrapper}>
+          <img 
+            src="/images/support-banner.jpg" 
+            alt="Bannière Support"
+            style={bannerImage}
+          />
+          <h1 style={title}>Espace Support Client</h1>
+          <p style={subtitle}>Consultez vos tickets et suivez leur avancement</p>
 
-      <div style={pageWrapper}>
-        {/* Nouveau fond ajouté ici */}
-        <img
-           src="https://www.millim.tn/media/uploads/2023/07/26/stb.webp"
-          alt="background"
-          style={backgroundImageStyle}
-        />
-
-        <div style={glassCard}>
-          <h1 style={titleStyle}>📋 Mes Tickets</h1>
-
-          <div style={ticketListStyle}>
-            {tickets.map((ticket) => (
-              <div key={ticket.id} style={ticketItemStyle}>
-                <div style={ticketHeaderStyle}>
-                  <h3 style={{ margin: 0 }}>{ticket.sujet}</h3>
-                  <span style={statusStyle(ticket.statut)}>{ticket.statut}</span>
-                </div>
-                <p style={ticketMetaStyle}>
-                  🏢 {ticket.departement} | 📅 {ticket.date}
-                </p>
-                <button
-                  style={detailButtonStyle}
+          <div style={ticketGrid}>
+            <div style={ticketList}>
+              {tickets.map((ticket) => (
+                <div 
+                  key={ticket.id}
+                  style={ticketItem} 
                   onClick={() => setSelectedTicket(ticket)}
                 >
-                  🔍 Voir Détails
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {selectedTicket && (
-            <div style={detailBoxStyle}>
-              <h3 style={{ color: "#0d47a1" }}>🎫 Détails du ticket</h3>
-              <p><strong>Sujet :</strong> {selectedTicket.sujet}</p>
-              <p><strong>Département :</strong> {selectedTicket.departement}</p>
-              <p><strong>Statut :</strong> {selectedTicket.statut}</p>
-              <p><strong>Date :</strong> {selectedTicket.date}</p>
-              <p><strong>Description :</strong> {selectedTicket.description}</p>
-              <button onClick={() => setSelectedTicket(null)} style={closeButtonStyle}>
-                ❌ Fermer
-              </button>
+                  <div style={ticketHeader}>
+                    <span style={ticketId}>#{ticket.id}</span>
+                    <span style={status(ticket.statut)}>{ticket.statut}</span>
+                  </div>
+                  <h3 style={ticketTitle}>{ticket.sujet}</h3>
+                  <p style={ticketDate}>{ticket.date}</p>
+                </div>
+              ))}
             </div>
-          )}
+
+            {selectedTicket && (
+              <div style={detailsPanel}>
+                <div style={detailsHeader}>
+                  <h2 style={detailsTitle}>Détails du ticket</h2>
+                  <button style={closeButton} onClick={() => setSelectedTicket(null)}>×</button>
+                </div>
+                <div style={detailsContent}>
+                  <div style={detailRow}>
+                    <span style={detailLabel}>Numéro :</span>
+                    <span>#{selectedTicket.id}</span>
+                  </div>
+                  <div style={detailRow}>
+                    <span style={detailLabel}>Statut :</span>
+                    <span style={status(selectedTicket.statut)}>{selectedTicket.statut}</span>
+                  </div>
+                  <div style={detailRow}>
+                    <span style={detailLabel}>Date :</span>
+                    <span>{selectedTicket.date}</span>
+                  </div>
+                  <div style={detailDescription}>
+                    <p style={detailLabel}>Description :</p>
+                    <p>{selectedTicket.description}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
       <Footerr />
     </>
   );
 }
 
-// 🎨 Styles améliorés
-const pageWrapper = {
-  fontFamily: "'Segoe UI', sans-serif",
-  minHeight: "100vh",
-  position: "relative",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  padding: "4rem 2rem",
-  overflow: "hidden",
-};
-
-const backgroundImageStyle = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-
-};
-
-const glassCard = {
-  background: "rgba(255, 255, 255, 0.95)",
-  backdropFilter: "blur(10px)",
-  borderRadius: "24px",
-  padding: "2rem", // Réduire la taille du padding
-  maxWidth: "900px", // Réduire la largeur à 900px
-  width: "100%",
-  boxShadow: "0 12px 30px rgba(0, 0, 0, 0.25)",
-};
-
-const titleStyle = {
-  fontSize: "2.5rem",
-  fontWeight: "800",
-  color: "#0d47a1",
-  marginBottom: "2.5rem",
-  textAlign: "center",
-};
-
-const ticketListStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "1.8rem",
-};
-
-const ticketItemStyle = {
-  background: "#ffffff",
-  padding: "1.5rem",
-  borderRadius: "16px",
-  borderLeft: "6px solid #0d47a1",
-  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
-  transition: "transform 0.2s ease",
-};
-
-const ticketHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const ticketMetaStyle = {
-  marginTop: "0.5rem",
-  color: "#555",
-  fontSize: "0.95rem",
-};
-
-const statusStyle = (statut) => {
-  let color;
-  switch (statut) {
-    case "Ouvert":
-      color = "#ff9800";
-      break;
-    case "En cours":
-      color = "#2196f3";
-      break;
-    case "Résolu":
-      color = "#4caf50";
-      break;
-    default:
-      color = "#999";
-  }
-  return {
-    padding: "0.4rem 0.8rem",
-    backgroundColor: color,
-    color: "#fff",
-    borderRadius: "8px",
-    fontSize: "0.8rem",
-    fontWeight: "600",
-  };
-};
-
-const detailButtonStyle = {
-  marginTop: "1rem",
-  padding: "0.6rem 1.2rem",
-  backgroundColor: "#0d47a1",
-  color: "#fff",
-  border: "none",
-  borderRadius: "8px",
-  fontWeight: "600",
-  fontSize: "0.9rem",
-  cursor: "pointer",
-  transition: "background 0.3s ease",
-};
-
-const detailBoxStyle = {
-  marginTop: "2rem",
-  background: "#f5f5f5",
-  padding: "1.5rem 2rem",
-  borderRadius: "16px",
-  boxShadow: "0 6px 14px rgba(0, 0, 0, 0.1)",
-};
-
-const closeButtonStyle = {
-  marginTop: "1rem",
-  padding: "0.5rem 1rem",
-  backgroundColor: "#f44336",
-  color: "#fff",
-  border: "none",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontWeight: "600",
-};
+// Styles
+const container = { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", backgroundColor: "#f4f6f8" };
+const contentWrapper = { width: "100%", maxWidth: "800px" };
+const bannerImage = { width: "100%", maxHeight: "200px", borderRadius: "12px", objectFit: "cover", marginBottom: "1rem", boxShadow: "0 4px 10px rgba(0,0,0,0.1)" };
+const title = { color: "#1a237e", fontSize: "2.5rem", textAlign: "center", marginBottom: "1rem", marginTop: "4rem", fontWeight: "bold", textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", borderBottom: "3px solid #c5cae9", paddingBottom: "0.5rem", letterSpacing: "1px" };
+const subtitle = { textAlign: "center", color: "#555", marginBottom: "2rem" };
+const ticketGrid = { display: "grid", gap: "2rem", gridTemplateColumns: "1fr" };
+const ticketList = { backgroundColor: "#f8f9fa", borderRadius: "8px", padding: "1rem" };
+const ticketItem = { backgroundColor: "white", borderRadius: "6px", padding: "1rem", marginBottom: "1rem", cursor: "pointer", border: "1px solid #eee", transition: "all 0.3s" };
+const ticketHeader = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" };
+const ticketId = { color: "#666", fontSize: "0.9rem" };
+const ticketTitle = { fontSize: "1.1rem", color: "#333", margin: "0 0 0.5rem 0" };
+const ticketDate = { color: "#999", fontSize: "0.85rem", margin: "0" };
+const detailsPanel = { backgroundColor: "white", borderRadius: "8px", padding: "1.5rem", border: "1px solid #eee" };
+const detailsHeader = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" };
+const detailsTitle = { fontSize: "1.5rem", color: "#1a237e", margin: "0" };
+const closeButton = { background: "none", border: "none", fontSize: "1.5rem", color: "#666", cursor: "pointer", padding: "0 0.5rem" };
+const detailsContent = { lineHeight: "1.6" };
+const detailRow = { display: "flex", justifyContent: "space-between", marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid #eee" };
+const detailLabel = { color: "#666", fontWeight: "bold", marginRight: "1rem" };
+const detailDescription = { marginTop: "2rem" };
 
 export default MyTickets;

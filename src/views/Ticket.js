@@ -1,70 +1,130 @@
-import React from "react";
+import React, { useState } from "react";
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
 import { Link } from "react-router-dom";
 
 function NewTicketForm() {
+  const [formData, setFormData] = useState({
+    sujet: "",
+    departement: "",
+    type: "",
+    description: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Crée un ticket avec un id unique basé sur l'heure actuelle
+    const newTicket = {
+      ...formData,
+      id: Date.now(),
+      date: new Date().toLocaleDateString(),
+      statut: "Ouvert", // Statut initial du ticket
+    };
+    
+    // Récupère les tickets existants dans le localStorage
+    const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+    
+    // Ajoute le nouveau ticket à la liste
+    storedTickets.push(newTicket);
+    
+    // Sauvegarde la liste mise à jour dans le localStorage
+    localStorage.setItem("tickets", JSON.stringify(storedTickets));
+    
+    // Redirige l'utilisateur vers la page des tickets après soumission
+    window.location.href = "/MyTickets"; // Redirection vers MyTickets
+  };
+
   return (
     <>
       <IndexNavbar />
+      <div style={container}>
+        <div style={card}>
+          <div style={leftSide}>
+            <h2 style={title}>🎫 Créer un ticket d’assistance</h2>
+            <p style={subtitle}>Merci de remplir les informations nécessaires pour traiter votre demande.</p>
 
-      <div style={pageWrapper}>
-        <img
-          src="https://www.millim.tn/media/uploads/2023/07/26/stb.webp"
-          alt="background"
-          style={backgroundImageStyle}
-        />
+            <form style={form} onSubmit={handleSubmit}>
+              <div style={inputGroup}>
+                <label htmlFor="sujet" style={label}>Sujet</label>
+                <input
+                  type="text"
+                  id="sujet"
+                  name="sujet"
+                  value={formData.sujet}
+                  onChange={handleChange}
+                  placeholder="Ex : Virement non effectué"
+                  style={input}
+                  required
+                />
+              </div>
 
-        <div style={ticketCard}>
-          <div style={headerSection}>
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-              <h1 style={titleStyle}>🎫 Nouveau Ticket STB</h1>
-            </div>
-            <Link to="MyTickets">
-              <button style={returnButtonStyle}>← Retour à la liste</button>
-            </Link>
+              <div style={inputGroup}>
+                <label htmlFor="departement" style={label}>Département</label>
+                <select
+                  id="departement"
+                  name="departement"
+                  value={formData.departement}
+                  onChange={handleChange}
+                  style={input}
+                  required
+                >
+                  <option value="">-- Sélectionner --</option>
+                  <option value="IT">IT - Informatique</option>
+                  <option value="RH">RH - Ressources Humaines</option>
+                  <option value="Comptabilité">Comptabilité</option>
+                </select>
+              </div>
+
+              <div style={inputGroup}>
+                <label htmlFor="type" style={label}>Priorité</label>
+                <select
+                  id="type"
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  style={input}
+                  required
+                >
+                  <option value="">-- Choisir --</option>
+                  <option value="Urgent">Urgent</option>
+                  <option value="Normal">Normal</option>
+                  <option value="Faible">Faible priorité</option>
+                </select>
+              </div>
+
+              <div style={inputGroup}>
+                <label htmlFor="description" style={label}>Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="4"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Décrivez le problème rencontré..."
+                  style={textarea}
+                  required
+                ></textarea>
+              </div>
+
+              <div style={buttonGroup}>
+                <Link to="/MyTickets" style={backLink}>← Retour</Link>
+                <button type="submit" style={submitButton}>Soumettre</button>
+              </div>
+            </form>
           </div>
 
-          <div style={formSection}>
-            <div style={inputGroup}>
-              <label style={labelStyle}>📝 Sujet</label>
-              <input
-                type="text"
-                placeholder="Ex: Échec de virement en ligne via l'application mobile"
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={inputGroup}>
-              <label style={labelStyle}>🏢 Département</label>
-              <select style={selectStyle}>
-                <option>IT - Informatique</option>
-                <option>RH - Ressources Humaines</option>
-                <option>Comptabilité</option>
-              </select>
-            </div>
-
-            <div style={inputGroup}>
-              <label style={labelStyle}>⚠️ Type de ticket</label>
-              <select style={selectStyle}>
-                <option>Urgent</option>
-                <option>Normal</option>
-                <option>Faible priorité</option>
-              </select>
-            </div>
-
-            <div style={inputGroup}>
-              <label style={labelStyle}>📄 Description</label>
-              <textarea
-                rows="5"
-                placeholder="Décrivez votre problème ici..."
-                style={textareaStyle}
-              />
-            </div>
-
-            <div style={createButtonContainer}>
-              <button style={createButtonStyle}>📨 Créer le ticket</button>
-            </div>
+          <div style={rightSide}>
+            <img
+              src="https://images.unsplash.com/photo-1605902711622-cfb43c4437d4?auto=format&fit=crop&w=1000&q=80"
+              alt="Assistance bancaire"
+              style={imageStyle}
+            />
           </div>
         </div>
       </div>
@@ -74,65 +134,60 @@ function NewTicketForm() {
   );
 }
 
-// 🎨 Styles
-const pageWrapper = {
-  position: "relative",
-  fontFamily: "'Segoe UI', sans-serif",
+// 🌟 Styles sobres et bancaires
+const container = {
+  backgroundColor: "#f1f3f6",
   minHeight: "100vh",
-  padding: "3rem 1rem",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  overflow: "hidden",
+  padding: "2rem",
 };
 
-const backgroundImageStyle = {
-  position: "absolute",
-  top: 0,
-  left: 0,
+const card = {
+  display: "flex",
+  flexDirection: "row",
+  backgroundColor: "#fff",
+  borderRadius: "16px",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.07)",
+  overflow: "hidden",
+  maxWidth: "1080px",
+  width: "100%",
+};
+
+const leftSide = {
+  flex: 1,
+  padding: "2.5rem",
+};
+
+const rightSide = {
+  flex: 1,
+  backgroundColor: "#e3e9f1",
+};
+
+const imageStyle = {
   width: "100%",
   height: "100%",
   objectFit: "cover",
 };
 
-const ticketCard = {
-  background: "rgba(255, 255, 255, 0.85)",
-  backdropFilter: "blur(10px)",
-  borderRadius: "16px",
-  boxShadow: "0 6px 18px rgba(0,0,0,0.2)",
-  padding: "2.5rem 3rem",
-  maxWidth: "700px",
-  width: "100%",
+const title = {
+  fontSize: "1.8rem",
+  fontWeight: "700",
+  color: "#003366",
+  marginBottom: "1rem",
 };
 
-const headerSection = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
+const subtitle = {
+  fontSize: "1rem",
+  color: "#555",
   marginBottom: "2rem",
 };
 
-const titleStyle = {
-  fontSize: "1.9rem",
-  fontWeight: "700",
-  color: "#0d47a1",
-};
-
-const returnButtonStyle = {
-  padding: "0.6rem 1.2rem",
-  backgroundColor: "#eeeeee",
-  color: "#0d47a1",
-  border: "1px solid #ccc",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontWeight: "600",
-  transition: "all 0.2s ease-in-out",
-};
-
-const formSection = {
+const form = {
   display: "flex",
   flexDirection: "column",
-  gap: "1.5rem",
+  gap: "1.2rem",
 };
 
 const inputGroup = {
@@ -140,46 +195,48 @@ const inputGroup = {
   flexDirection: "column",
 };
 
-const labelStyle = {
+const label = {
   fontWeight: "600",
   marginBottom: "0.5rem",
-  color: "#333",
+  color: "#003366",
 };
 
-const inputStyle = {
-  padding: "0.9rem",
-  border: "1px solid #ccc",
-  borderRadius: "6px",
+const input = {
+  padding: "0.8rem",
   fontSize: "1rem",
-  backgroundColor: "#fff",
+  borderRadius: "8px",
+  border: "1px solid #ccc",
+  backgroundColor: "#f9f9f9",
 };
 
-const selectStyle = {
-  ...inputStyle,
-  cursor: "pointer",
-};
-
-const textareaStyle = {
-  ...inputStyle,
+const textarea = {
+  ...input,
   resize: "vertical",
-  minHeight: "120px",
+  minHeight: "100px",
 };
 
-const createButtonContainer = {
+const buttonGroup = {
+  marginTop: "1.5rem",
   display: "flex",
-  justifyContent: "flex-end",
+  justifyContent: "space-between",
+  alignItems: "center",
 };
 
-const createButtonStyle = {
-  padding: "1rem 2rem",
-  backgroundColor: "#0d47a1",
-  color: "#ffffff",
+const submitButton = {
+  backgroundColor: "#003366",
+  color: "#fff",
   border: "none",
+  padding: "0.8rem 1.6rem",
+  fontSize: "1rem",
   borderRadius: "8px",
   cursor: "pointer",
   fontWeight: "600",
-  fontSize: "1rem",
-  transition: "background 0.3s ease",
+};
+
+const backLink = {
+  color: "#003366",
+  textDecoration: "none",
+  fontWeight: "500",
 };
 
 export default NewTicketForm;

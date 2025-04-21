@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-
-
 module.exports.connectToMongoDB = async () => {
     try {
         mongoose.set('strictQuery', false);
