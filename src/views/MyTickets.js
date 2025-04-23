@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
@@ -14,7 +15,8 @@ function MyTickets() {
 
     // Récupère les tickets depuis localStorage
     const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
-    setTickets(storedTickets);
+setTickets(storedTickets);
+
   }, []);
 
   const status = (statut) => ({

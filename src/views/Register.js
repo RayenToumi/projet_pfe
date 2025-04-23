@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaGoogle } from "react-icons/fa";
+import axios from 'axios';
 
 export default function Register() {
   const [firstName, setFirstName] = useState("");
@@ -12,6 +13,26 @@ export default function Register() {
   const [postalCode, setPostalCode] = useState("");
   const [userName, setUserName] = useState("");
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const userData = {
+      nom: firstName,
+      prenom: lastName,
+      email: email,
+      tel: phoneNumber,
+    };
+
+    try {
+      const response = await axios.post("/adduser", userData);
+      console.log("Utilisateur ajouté:", response.data);
+      alert("Utilisateur ajouté avec succès!");
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de l'utilisateur:", error);
+      alert("Erreur lors de l'ajout de l'utilisateur!");
+    }
+  };
+
   return (
     <div
       style={{
@@ -19,8 +40,7 @@ export default function Register() {
         height: "100vh",
         alignItems: "center",
         justifyContent: "center",
-        backgroundImage:
-          "url('https://img.freepik.com/premium-vector/abstract-geometric-white-gray-color-background-vector_665257-159.jpg?semt=ais_hybrid')",
+        backgroundImage: "url('https://img.freepik.com/premium-vector/abstract-geometric-white-gray-color-background-vector_665257-159.jpg?semt=ais_hybrid')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         padding: "16px",
@@ -38,7 +58,7 @@ export default function Register() {
           position: "relative",
         }}
       >
-        {/* Logo */}
+        {/* Logo STB */}
         <img
           src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png"
           alt="STB Logo"
@@ -51,7 +71,7 @@ export default function Register() {
           }}
         />
 
-        {/* Left Side - Formulaire d'inscription */}
+        {/* Partie Gauche - Formulaire */}
         <div
           style={{
             padding: "32px",
@@ -61,37 +81,13 @@ export default function Register() {
             background: "white",
           }}
         >
-          <h2
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#1f2937",
-              textAlign: "center",
-            }}
-          >
+          <h2 style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937", textAlign: "center" }}>
             Sign Up
           </h2>
 
-          {/* Prénom et Nom */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "12px",
-              marginTop: "16px",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "16px" }}>
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#4b5563",
-                }}
-              >
-                First Name
-              </label>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Nom</label>
               <input
                 type="text"
                 placeholder="Enter your first name"
@@ -107,16 +103,7 @@ export default function Register() {
               />
             </div>
             <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#4b5563",
-                }}
-              >
-                Last Name
-              </label>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Prenom</label>
               <input
                 type="text"
                 placeholder="Enter your last name"
@@ -133,126 +120,8 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Nom d'utilisateur */}
           <div style={{ marginTop: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#4b5563",
-              }}
-            >
-              Username
-            </label>
-            <input
-              type="text"
-              placeholder="Enter your username"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                marginTop: "4px",
-              }}
-            />
-          </div>
-
-          {/* Adresse */}
-          <div style={{ marginTop: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#4b5563",
-              }}
-            >
-              Address
-            </label>
-            <input
-              type="text"
-              placeholder="Enter your address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                marginTop: "4px",
-              }}
-            />
-          </div>
-
-          {/* Ville */}
-          <div style={{ marginTop: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#4b5563",
-              }}
-            >
-              City
-            </label>
-            <input
-              type="text"
-              placeholder="Enter your city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                marginTop: "4px",
-              }}
-            />
-          </div>
-
-          {/* Code Postal */}
-          <div style={{ marginTop: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#4b5563",
-              }}
-            >
-              Postal Code
-            </label>
-            <input
-              type="text"
-              placeholder="Enter your postal code"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                marginTop: "4px",
-              }}
-            />
-          </div>
-
-          {/* Email */}
-          <div style={{ marginTop: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#4b5563",
-              }}
-            >
-              Email
-            </label>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Email</label>
             <input
               type="email"
               placeholder="Enter your email"
@@ -268,20 +137,10 @@ export default function Register() {
             />
           </div>
 
-          {/* Téléphone */}
           <div style={{ marginTop: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#4b5563",
-              }}
-            >
-              Phone Number
-            </label>
+            <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Num tel</label>
             <input
-              type="tel"
+              type="text"
               placeholder="Enter your phone number"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
@@ -295,35 +154,8 @@ export default function Register() {
             />
           </div>
 
-          {/* Mot de passe */}
-          <div style={{ marginTop: "12px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#4b5563",
-              }}
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                marginTop: "4px",
-              }}
-            />
-          </div>
-
-          {/* Bouton d'inscription */}
           <button
+            onClick={handleSubmit}
             style={{
               width: "100%",
               background: "#3b82f6",
@@ -338,24 +170,12 @@ export default function Register() {
             REGISTER
           </button>
 
-          {/* Séparateur */}
-          <div
-            style={{ display: "flex", alignItems: "center", margin: "16px 0" }}
-          >
-            <div
-              style={{ flex: "1", height: "1px", background: "#d1d5db" }}
-            ></div>
-            <span
-              style={{ margin: "0 8px", fontSize: "14px", color: "#6b7280" }}
-            >
-              OR
-            </span>
-            <div
-              style={{ flex: "1", height: "1px", background: "#d1d5db" }}
-            ></div>
+          <div style={{ display: "flex", alignItems: "center", margin: "16px 0" }}>
+            <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
+            <span style={{ margin: "0 8px", fontSize: "14px", color: "#6b7280" }}>OR</span>
+            <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
           </div>
 
-          {/* Bouton Google */}
           <button
             style={{
               width: "100%",
@@ -374,31 +194,20 @@ export default function Register() {
             <FaGoogle style={{ color: "#3b82f6" }} /> Continue with Google
           </button>
 
-          {/* Lien de connexion */}
-          <p
-            style={{
-              fontSize: "14px",
-              textAlign: "center",
-              color: "#6b7280",
-              marginTop: "12px",
-            }}
-          >
+          <p style={{ fontSize: "14px", textAlign: "center", color: "#6b7280", marginTop: "12px" }}>
             Already have an account?{" "}
-            <a href="./" style={{ color: "#3b82f6", textDecoration: "none" }}>
-              Log in
-            </a>
+            <a href="./" style={{ color: "#3b82f6", textDecoration: "none" }}>Log in</a>
           </p>
         </div>
 
-        {/* Right Side - Message de bienvenue */}
+        {/* Partie Droite - Image */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            backgroundImage:
-              "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrxCZS8RUx52KhkLFeYR19uXX3GnbF9-sH75brySGs70DJ1EINGwkFnr6K5LqopCqGHTVK79x_gscCHE_cR1wmpIADhJXkTZIJhDz_VtYuxwekNibQUVl6VKNuq3uOlTsfnFW2F_ZVXsm2m7DU2IGJREbwsM16cR45D3-4iI5AwRArtjCnR713SvfIJpg/s1934/stb%20%20thebanker.jpg')",
+            backgroundImage: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrxCZS8RUx52KhkLFeYR19uXX3GnbF9-sH75brySGs70DJ1EINGwkFnr6K5LqopCqGHTVK79x_gscCHE_cR1wmpIADhJXkTZIJhDz_VtYuxwekNibQUVl6VKNuq3uOlTsfnFW2F_ZVXsm2m7DU2IGJREbwsM16cR45D3-4iI5AwRArtjCnR713SvfIJpg/s1934/stb%20%20thebanker.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "center",
             color: "white",

@@ -1,127 +1,116 @@
 import React, { useEffect, useState } from "react";
+import axios from 'axios';
 import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash, faPen } from "@fortawesome/free-solid-svg-icons";
-import { getAllUsers } from "services/ApiUser";
 
 export default function CardTable({ color }) {
-  const [users, setUsers] = useState([
-    {
-      nom: "Toumi",
-      prenom: "Med Rayen",
-      email: "toumirayen130@gmail.com",
-      id: "05",
-    },
-  ]);
-
+  const [users, setUsers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newUser, setNewUser] = useState({
     nom: "",
     prenom: "",
     email: "",
-    id: "",
+    _id: "", // Modifié pour correspondre à la clé typique de MongoDB
+    role: "",
+    tel: "",
+    password: ""
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
 
   const getUsers = async () => {
     try {
-      const res = await getAllUsers();
-      if (res.data?.userList) {
-        setUsers(res.data.userList);
+      const res = await axios.get("/allusers");
+      if (res.data) {
+        setUsers(res.data);
+        console.log("Users data:", res.data); // Pour debugger la structure des données
       }
     } catch (error) {
-      console.log(error);
+      console.error("Erreur lors de la récupération des utilisateurs :", error);
     }
   };
 
   useEffect(() => {
-    // getUsers(); // Décommente pour charger depuis l'API
+    getUsers();
   }, []);
 
   const handleInputChange = (e) => {
     setNewUser({ ...newUser, [e.target.name]: e.target.value });
   };
 
-  const handleAddOrUpdateUser = (e) => {
+  const handleUpdateUser = async (e) => {
     e.preventDefault();
-
-    if (isEditing && editIndex !== null) {
+  
+    try {
+      const res = await axios.put(`/updateuser/${newUser._id}`, newUser); // <-- appel API backend
       const updatedUsers = [...users];
-      updatedUsers[editIndex] = newUser;
+      updatedUsers[editIndex] = res.data; // utilise la réponse mise à jour du back-end
       setUsers(updatedUsers);
-    } else {
-      setUsers([...users, newUser]);
+      
+      setShowForm(false);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour:", error);
+      alert("Échec de la mise à jour de l'utilisateur.");
     }
-
-    setNewUser({ nom: "", prenom: "", email: "", id: "" });
-    setIsEditing(false);
-    setEditIndex(null);
-    setShowForm(false);
   };
+  
 
-  const handleDeleteUser = (index) => {
+  const handleDeleteUser = async (index) => {
     const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?");
     if (confirmDelete) {
-      const updatedUsers = users.filter((_, i) => i !== index);
-      setUsers(updatedUsers);
+      try {
+        const userId = users[index]._id;
+        await axios.delete(`/deleteuser/${userId}`); // <-- appel à l'API backend
+        const updatedUsers = users.filter((_, i) => i !== index);
+        setUsers(updatedUsers);
+      } catch (error) {
+        console.error("Erreur lors de la suppression:", error);
+        alert("Échec de la suppression de l'utilisateur.");
+      }
     }
   };
+  
 
   const handleEditUser = (index) => {
-    setNewUser(users[index]);
+    setNewUser({ 
+      ...users[index],
+      password: "" // Réinitialiser le mot de passe lors de l'édition
+    });
     setIsEditing(true);
     setEditIndex(index);
     setShowForm(true);
   };
 
   return (
-    <div
-      className={
-        "relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg " +
-        (color === "light" ? "bg-white" : "bg-lightBlue-900 text-white")
-      }
-    >
+    <div className={"relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg " + (color === "light" ? "bg-white" : "bg-lightBlue-900 text-white")}>
       <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-        <h3
-          className={
-            "font-bold text-xl " +
-            (color === "light" ? "text-blueGray-700" : "text-white")
-          }
-        >
-          Liste des utilisateurs
-        </h3>
-        <button
-          className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded shadow"
-          onClick={() => {
-            setShowForm(!showForm);
-            setNewUser({ nom: "", prenom: "", email: "", id: "" });
-            setIsEditing(false);
-          }}
-        >
-          {showForm && !isEditing ? "Annuler" : "Ajouter un utilisateur"}
-        </button>
+        <h3 className={"font-bold text-xl " + (color === "light" ? "text-blueGray-700" : "text-white")}>Liste des utilisateurs</h3>
       </div>
 
       <div className="overflow-x-auto p-4">
         <table className="w-full text-sm text-left text-white">
           <thead className="text-xs uppercase bg-lightBlue-800 text-blueGray-100">
             <tr>
+              <th className="px-6 py-3">ID</th>
               <th className="px-6 py-3">Nom</th>
               <th className="px-6 py-3">Prénom</th>
               <th className="px-6 py-3">Email</th>
-              <th className="px-6 py-3">ID</th>
+              <th className="px-6 py-3">Rôle</th>
+              <th className="px-6 py-3">Téléphone</th>
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-lightBlue-900 divide-y divide-blueGray-700">
             {users.map((user, index) => (
-              <tr key={index} className="hover:bg-lightBlue-800">
+              <tr key={user._id} className="hover:bg-lightBlue-800">
+                <td className="px-6 py-4">{user._id}</td> {/* Affiche l'_id de MongoDB */}
                 <td className="px-6 py-4">{user.nom}</td>
                 <td className="px-6 py-4">{user.prenom}</td>
                 <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">{user.id}</td>
+                <td className="px-6 py-4">{user.role}</td>
+                <td className="px-6 py-4">{user.tel}</td>
                 <td className="px-6 py-4 text-right">
                   <button
                     onClick={() => handleDeleteUser(index)}
@@ -142,25 +131,33 @@ export default function CardTable({ color }) {
         </table>
 
         {showForm && (
-          <form
-            onSubmit={handleAddOrUpdateUser}
-            className="mt-6 bg-lightBlue-900 text-white p-6 rounded shadow-md"
-          >
+          <form onSubmit={handleUpdateUser} className="mt-6 bg-lightBlue-900 text-white p-6 rounded shadow-md">
             <h4 className="text-lg font-semibold mb-4 text-white">
-              {isEditing ? "Modifier l'utilisateur" : "Ajouter un nouvel utilisateur"}
+              Modifier l'utilisateur
             </h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm mb-1" htmlFor="_id">ID</label>
+                <input
+                  id="_id"
+                  type="text"
+                  name="_id"
+                  value={newUser._id}
+                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded cursor-not-allowed"
+                  disabled
+                  readOnly
+                />
+              </div>
               <div>
                 <label className="block text-sm mb-1" htmlFor="nom">Nom</label>
                 <input
                   id="nom"
                   type="text"
                   name="nom"
-                  placeholder="Entrer le nom"
                   value={newUser.nom}
                   onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white placeholder-blueGray-200 rounded"
+                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
                   required
                 />
               </div>
@@ -170,10 +167,9 @@ export default function CardTable({ color }) {
                   id="prenom"
                   type="text"
                   name="prenom"
-                  placeholder="Entrer le prénom"
                   value={newUser.prenom}
                   onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white placeholder-blueGray-200 rounded"
+                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
                   required
                 />
               </div>
@@ -183,37 +179,63 @@ export default function CardTable({ color }) {
                   id="email"
                   type="email"
                   name="email"
-                  placeholder="Adresse email"
                   value={newUser.email}
                   onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white placeholder-blueGray-200 rounded"
+                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm mb-1" htmlFor="id">ID</label>
+                <label className="block text-sm mb-1" htmlFor="role">Rôle</label>
                 <input
-                  id="id"
+                  id="role"
                   type="text"
-                  name="id"
-                  placeholder="Identifiant"
-                  value={newUser.id}
+                  name="role"
+                  value={newUser.role}
                   onChange={handleInputChange}
-                  readOnly={isEditing}
-                  className={`w-full p-2 ${
-                    isEditing ? "bg-lightBlue-900 cursor-not-allowed" : "bg-lightBlue-800"
-                  } border border-lightBlue-700 text-white placeholder-blueGray-200 rounded`}
+                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" htmlFor="tel">Téléphone</label>
+                <input
+                  id="tel"
+                  type="text"
+                  name="tel"
+                  value={newUser.tel}
+                  onChange={handleInputChange}
+                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" htmlFor="password">Mot de passe</label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  placeholder="Nouveau mot de passe"
+                  value={newUser.password}
+                  onChange={handleInputChange}
+                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="bg-gray-500 hover:bg-gray-600 text-white text-sm font-semibold px-6 py-2 rounded shadow"
+              >
+                Annuler
+              </button>
               <button
                 type="submit"
                 className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-6 py-2 rounded shadow"
               >
-                {isEditing ? "Modifier" : "Ajouter"}
+                Modifier
               </button>
             </div>
           </form>
@@ -222,3 +244,7 @@ export default function CardTable({ color }) {
     </div>
   );
 }
+
+CardTable.propTypes = {
+  color: PropTypes.oneOf(["light", "dark"]),
+};

@@ -6,38 +6,70 @@ import { Link } from "react-router-dom";
 function NewTicketForm() {
   const [formData, setFormData] = useState({
     sujet: "",
-    departement: "",
     type: "",
+    urgence: "",
     description: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
     
-    // Crée un ticket avec un id unique basé sur l'heure actuelle
-    const newTicket = {
-      ...formData,
-      id: Date.now(),
-      date: new Date().toLocaleDateString(),
-      statut: "Ouvert", // Statut initial du ticket
-    };
-    
-    // Récupère les tickets existants dans le localStorage
-    const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
-    
-    // Ajoute le nouveau ticket à la liste
-    storedTickets.push(newTicket);
-    
-    // Sauvegarde la liste mise à jour dans le localStorage
-    localStorage.setItem("tickets", JSON.stringify(storedTickets));
-    
-    // Redirige l'utilisateur vers la page des tickets après soumission
-    window.location.href = "/MyTickets"; // Redirection vers MyTickets
+    try {
+      // Partie sauvegarde locale
+      const newTicket = {
+        ...formData,
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        statut: "Ouvert",
+      };
+      
+      // Tentative d'envoi au backend
+      const response = await fetch('/addticket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+      }
+
+      // Si le backend répond OK, on sauvegarde localement
+      const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+      storedTickets.push(newTicket);
+      localStorage.setItem("tickets", JSON.stringify(storedTickets));
+
+      // Redirection
+      window.location.href = "/MyTickets";
+
+    } catch (error) {
+      console.error('Erreur:', error);
+      
+      // Fallback: Sauvegarde locale si le backend échoue
+      const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+      storedTickets.push({
+        ...formData,
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        statut: "Erreur d'envoi - Sauvegardé localement",
+      });
+      localStorage.setItem("tickets", JSON.stringify(storedTickets));
+
+      setError(`Échec de l'envoi au serveur. Ticket sauvegardé localement. ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -46,12 +78,19 @@ function NewTicketForm() {
       <div style={container}>
         <div style={card}>
           <div style={leftSide}>
-            <h2 style={title}>🎫 Créer un ticket d’assistance</h2>
-            <p style={subtitle}>Merci de remplir les informations nécessaires pour traiter votre demande.</p>
+            <h2 style={title}>🎫 Créer un ticket d'assistance</h2>
+            <p style={subtitle}>
+              Merci de remplir les informations nécessaires pour traiter votre
+              demande.
+            </p>
+
+            {error && <div style={errorMessage}>{error}</div>}
 
             <form style={form} onSubmit={handleSubmit}>
               <div style={inputGroup}>
-                <label htmlFor="sujet" style={label}>Sujet</label>
+                <label htmlFor="sujet" style={label}>
+                  Sujet
+                </label>
                 <input
                   type="text"
                   id="sujet"
@@ -65,11 +104,13 @@ function NewTicketForm() {
               </div>
 
               <div style={inputGroup}>
-                <label htmlFor="departement" style={label}>Département</label>
+                <label htmlFor="type" style={label}>
+                  Type
+                </label>
                 <select
-                  id="departement"
-                  name="departement"
-                  value={formData.departement}
+                  id="type"
+                  name="type"
+                  value={formData.type}
                   onChange={handleChange}
                   style={input}
                   required
@@ -82,11 +123,13 @@ function NewTicketForm() {
               </div>
 
               <div style={inputGroup}>
-                <label htmlFor="type" style={label}>Priorité</label>
+                <label htmlFor="urgence" style={label}>
+                  Urgence
+                </label>
                 <select
-                  id="type"
-                  name="type"
-                  value={formData.type}
+                  id="urgence"
+                  name="urgence"
+                  value={formData.urgence}
                   onChange={handleChange}
                   style={input}
                   required
@@ -99,7 +142,9 @@ function NewTicketForm() {
               </div>
 
               <div style={inputGroup}>
-                <label htmlFor="description" style={label}>Description</label>
+                <label htmlFor="description" style={label}>
+                  Description
+                </label>
                 <textarea
                   id="description"
                   name="description"
@@ -113,8 +158,16 @@ function NewTicketForm() {
               </div>
 
               <div style={buttonGroup}>
-                <Link to="/MyTickets" style={backLink}>← Retour</Link>
-                <button type="submit" style={submitButton}>Soumettre</button>
+                <Link to="/MyTickets" style={backLink}>
+                  ← Retour
+                </Link>
+                <button 
+                  type="submit" 
+                  style={submitButton}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Envoi en cours..." : "Soumettre"}
+                </button>
               </div>
             </form>
           </div>
@@ -128,7 +181,6 @@ function NewTicketForm() {
           </div>
         </div>
       </div>
-
       <Footerr />
     </>
   );
@@ -231,12 +283,22 @@ const submitButton = {
   borderRadius: "8px",
   cursor: "pointer",
   fontWeight: "600",
+  opacity: (props) => (props.disabled ? 0.7 : 1),
 };
 
 const backLink = {
   color: "#003366",
   textDecoration: "none",
   fontWeight: "500",
+};
+
+const errorMessage = {
+  backgroundColor: "#ffebee",
+  color: "#c62828",
+  padding: "0.8rem",
+  borderRadius: "8px",
+  marginBottom: "1rem",
+  border: "1px solid #ef9a9a",
 };
 
 export default NewTicketForm;
