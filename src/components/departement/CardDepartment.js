@@ -4,14 +4,7 @@ import { MdDelete, MdEdit } from "react-icons/md";
 
 // Styles CSS pour les dialogs et modals
 const styles = `
-  .titre {
-    text-align: center;
-    text-transform: uppercase;
-    color: darkblue;
-    font-size: 2.5em;
-    margin-bottom: 2rem;
-    font-weight: bold;
-  }
+
 
   .fixed-dialog-container {
     position: fixed;
@@ -366,41 +359,8 @@ export default function CardTechnician({ color = "light" }) {
           </div>
         )}
 
-        <div className="titre"><h1>Les Techniciens</h1></div>
-        <div className="rounded-t mb-0 px-4 py-3 border-0">
-          <div className="flex flex-wrap items-center justify-between">
-            <h3 className={"font-semibold text-lg " + (color === "light" ? "text-blueGray-700" : "text-white")}>
-              Liste des Techniciens
-            </h3>
-          </div>
-          <div className="flex flex-wrap items-center justify-between mt-4">
-            <div className="flex items-center space-x-6">
-              <select
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value)}
-                className="btn-filter py-2 border rounded-lg focus:outline-none btn-rech-id text-blueGray-700"
-              >
-                <option value="" disabled>Filtrer par</option>
-                <option value="id-asc">ID Ascendant</option>
-                <option value="id-desc">ID Descendant</option>
-                <option value="technicien">Par Technicien</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Rechercher par nom ou ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-3 py-2 border rounded-lg focus:outline-none border-blueGray-300 text-blueGray-700 ml-4"
-              />
-            </div>
-            <button
-              onClick={handleAddTechnician}
-              className="btn-add"
-            >
-              Ajouter un technicien
-            </button>
-          </div>
-        </div>
+        
+        
         <div className="table-container">
           <table>
             <thead>

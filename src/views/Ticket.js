@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
-import { Link } from "react-router-dom";
 
 function NewTicketForm() {
   const [formData, setFormData] = useState({
@@ -10,6 +10,7 @@ function NewTicketForm() {
     urgence: "",
     description: "",
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,41 +23,31 @@ function NewTicketForm() {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-    
+
     try {
-      // Partie sauvegarde locale
       const newTicket = {
         ...formData,
         id: Date.now(),
         date: new Date().toLocaleDateString(),
         statut: "Ouvert",
       };
-      
-      // Tentative d'envoi au backend
-      const response = await fetch('/addticket', {
-        method: 'POST',
+
+      const response = await fetch("/addticket", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
 
-      // Si le backend répond OK, on sauvegarde localement
       const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
       storedTickets.push(newTicket);
       localStorage.setItem("tickets", JSON.stringify(storedTickets));
 
-      // Redirection
       window.location.href = "/MyTickets";
-
     } catch (error) {
-      console.error('Erreur:', error);
-      
-      // Fallback: Sauvegarde locale si le backend échoue
       const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
       storedTickets.push({
         ...formData,
@@ -65,8 +56,7 @@ function NewTicketForm() {
         statut: "Erreur d'envoi - Sauvegardé localement",
       });
       localStorage.setItem("tickets", JSON.stringify(storedTickets));
-
-      setError(`Échec de l'envoi au serveur. Ticket sauvegardé localement. ${error.message}`);
+      setError(`Échec de l'envoi. ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -75,110 +65,42 @@ function NewTicketForm() {
   return (
     <>
       <IndexNavbar />
-      <div style={container}>
-        <div style={card}>
-          <div style={leftSide}>
-            <h2 style={title}>🎫 Créer un ticket d'assistance</h2>
-            <p style={subtitle}>
-              Merci de remplir les informations nécessaires pour traiter votre
-              demande.
-            </p>
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <h2 style={styles.title}>Créer un ticket</h2>
 
-            {error && <div style={errorMessage}>{error}</div>}
+          {error && <div style={styles.error}>{error}</div>}
 
-            <form style={form} onSubmit={handleSubmit}>
-              <div style={inputGroup}>
-                <label htmlFor="sujet" style={label}>
-                  Sujet
-                </label>
-                <input
-                  type="text"
-                  id="sujet"
-                  name="sujet"
-                  value={formData.sujet}
-                  onChange={handleChange}
-                  placeholder="Ex : Virement non effectué"
-                  style={input}
-                  required
-                />
-              </div>
+          <form onSubmit={handleSubmit} style={styles.form}>
+            <label style={styles.label}>Sujet</label>
+            <input type="text" name="sujet" value={formData.sujet} onChange={handleChange} style={styles.input} required />
 
-              <div style={inputGroup}>
-                <label htmlFor="type" style={label}>
-                  Type
-                </label>
-                <select
-                  id="type"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleChange}
-                  style={input}
-                  required
-                >
-                  <option value="">-- Sélectionner --</option>
-                  <option value="IT">IT - Informatique</option>
-                  <option value="RH">RH - Ressources Humaines</option>
-                  <option value="Comptabilité">Comptabilité</option>
-                </select>
-              </div>
+            <label style={styles.label}>Type</label>
+            <select name="type" value={formData.type} onChange={handleChange} style={styles.input} required>
+              <option value="">-- Sélectionner --</option>
+              <option value="IT">Informatique</option>
+              <option value="RH">Ressources Humaines</option>
+              <option value="Comptabilité">Comptabilité</option>
+            </select>
 
-              <div style={inputGroup}>
-                <label htmlFor="urgence" style={label}>
-                  Urgence
-                </label>
-                <select
-                  id="urgence"
-                  name="urgence"
-                  value={formData.urgence}
-                  onChange={handleChange}
-                  style={input}
-                  required
-                >
-                  <option value="">-- Choisir --</option>
-                  <option value="Urgent">Urgent</option>
-                  <option value="Normal">Normal</option>
-                  <option value="Faible">Faible priorité</option>
-                </select>
-              </div>
+            <label style={styles.label}>Urgence</label>
+            <select name="urgence" value={formData.urgence} onChange={handleChange} style={styles.input} required>
+              <option value="">-- Choisir --</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Normal">Normal</option>
+              <option value="Faible">Faible</option>
+            </select>
 
-              <div style={inputGroup}>
-                <label htmlFor="description" style={label}>
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows="4"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Décrivez le problème rencontré..."
-                  style={textarea}
-                  required
-                ></textarea>
-              </div>
+            <label style={styles.label}>Description</label>
+            <textarea name="description" value={formData.description} onChange={handleChange} rows="4" style={styles.textarea} required />
 
-              <div style={buttonGroup}>
-                <Link to="/MyTickets" style={backLink}>
-                  ← Retour
-                </Link>
-                <button 
-                  type="submit" 
-                  style={submitButton}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Envoi en cours..." : "Soumettre"}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div style={rightSide}>
-            <img
-              src="https://images.unsplash.com/photo-1605902711622-cfb43c4437d4?auto=format&fit=crop&w=1000&q=80"
-              alt="Assistance bancaire"
-              style={imageStyle}
-            />
-          </div>
+            <div style={styles.actions}>
+              <Link to="/MyTickets" style={styles.link}>← Retour</Link>
+              <button type="submit" style={styles.submitBtn} disabled={isSubmitting}>
+                {isSubmitting ? "Soumission..." : "Soumettre"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
       <Footerr />
@@ -186,119 +108,78 @@ function NewTicketForm() {
   );
 }
 
-// 🌟 Styles sobres et bancaires
-const container = {
-  backgroundColor: "#f1f3f6",
-  minHeight: "100vh",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  padding: "2rem",
-};
-
-const card = {
-  display: "flex",
-  flexDirection: "row",
-  backgroundColor: "#fff",
-  borderRadius: "16px",
-  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.07)",
-  overflow: "hidden",
-  maxWidth: "1080px",
-  width: "100%",
-};
-
-const leftSide = {
-  flex: 1,
-  padding: "2.5rem",
-};
-
-const rightSide = {
-  flex: 1,
-  backgroundColor: "#e3e9f1",
-};
-
-const imageStyle = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-};
-
-const title = {
-  fontSize: "1.8rem",
-  fontWeight: "700",
-  color: "#003366",
-  marginBottom: "1rem",
-};
-
-const subtitle = {
-  fontSize: "1rem",
-  color: "#555",
-  marginBottom: "2rem",
-};
-
-const form = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "1.2rem",
-};
-
-const inputGroup = {
-  display: "flex",
-  flexDirection: "column",
-};
-
-const label = {
-  fontWeight: "600",
-  marginBottom: "0.5rem",
-  color: "#003366",
-};
-
-const input = {
-  padding: "0.8rem",
-  fontSize: "1rem",
-  borderRadius: "8px",
-  border: "1px solid #ccc",
-  backgroundColor: "#f9f9f9",
-};
-
-const textarea = {
-  ...input,
-  resize: "vertical",
-  minHeight: "100px",
-};
-
-const buttonGroup = {
-  marginTop: "1.5rem",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const submitButton = {
-  backgroundColor: "#003366",
-  color: "#fff",
-  border: "none",
-  padding: "0.8rem 1.6rem",
-  fontSize: "1rem",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontWeight: "600",
-  opacity: (props) => (props.disabled ? 0.7 : 1),
-};
-
-const backLink = {
-  color: "#003366",
-  textDecoration: "none",
-  fontWeight: "500",
-};
-
-const errorMessage = {
-  backgroundColor: "#ffebee",
-  color: "#c62828",
-  padding: "0.8rem",
-  borderRadius: "8px",
-  marginBottom: "1rem",
-  border: "1px solid #ef9a9a",
+const styles = {
+  page: {
+    minHeight: "100vh",
+    backgroundColor: "#f0f2f5",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "2rem",
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: "16px",
+    padding: "3rem",
+    maxWidth: "700px",
+    width: "100%",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+  },
+  title: {
+    fontSize: "1.8rem",
+    marginBottom: "1.5rem",
+    color: "#003366",
+    textAlign: "center",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  label: {
+    fontWeight: "600",
+    color: "#003366",
+  },
+  input: {
+    padding: "0.9rem",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    fontSize: "1rem",
+    backgroundColor: "#f9f9f9",
+  },
+  textarea: {
+    padding: "0.9rem",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    fontSize: "1rem",
+    backgroundColor: "#f9f9f9",
+  },
+  actions: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "1.5rem",
+  },
+  submitBtn: {
+    backgroundColor: "#003366",
+    color: "#fff",
+    padding: "0.8rem 2rem",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+  link: {
+    color: "#003366",
+    textDecoration: "none",
+    fontWeight: "500",
+  },
+  error: {
+    backgroundColor: "#ffe6e6",
+    padding: "1rem",
+    borderRadius: "8px",
+    color: "#cc0000",
+    marginBottom: "1rem",
+  },
 };
 
 export default NewTicketForm;

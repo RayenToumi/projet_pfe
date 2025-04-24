@@ -30,3 +30,24 @@ module.exports.addTicket = async (req, res) => {
       });
   }
 };
+module.exports.getAlltickets = async (req, res) => {
+    try {
+      const ticketlist = await TicketModel.find().sort({ createdAt: -1 });
+      if (!ticketlist) {
+        throw new Error("Aucun ticket trouvé");
+      }
+      
+      // Formatez les dates pour le frontend
+      const formattedTickets = ticketlist.map(ticket => ({
+        ...ticket._doc,
+        createdAt: ticket.createdAt.toISOString(),
+        date: ticket.date.toISOString()
+      }));
+      
+      res.status(200).json(formattedTickets);
+    } catch (error) {
+      res.status(500).json({ 
+        error: error.message 
+      });
+    }
+  };

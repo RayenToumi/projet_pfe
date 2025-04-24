@@ -11,7 +11,7 @@ export default function CardTable({ color }) {
     nom: "",
     prenom: "",
     email: "",
-    _id: "", // Modifié pour correspondre à la clé typique de MongoDB
+    _id: "",
     role: "",
     tel: "",
     password: ""
@@ -24,7 +24,7 @@ export default function CardTable({ color }) {
       const res = await axios.get("/allusers");
       if (res.data) {
         setUsers(res.data);
-        console.log("Users data:", res.data); // Pour debugger la structure des données
+        console.log("Users data:", res.data);
       }
     } catch (error) {
       console.error("Erreur lors de la récupération des utilisateurs :", error);
@@ -39,30 +39,48 @@ export default function CardTable({ color }) {
     setNewUser({ ...newUser, [e.target.name]: e.target.value });
   };
 
-  const handleUpdateUser = async (e) => {
+  const handleSubmitUser = async (e) => {
     e.preventDefault();
-  
-    try {
-      const res = await axios.put(`/updateuser/${newUser._id}`, newUser); // <-- appel API backend
-      const updatedUsers = [...users];
-      updatedUsers[editIndex] = res.data; // utilise la réponse mise à jour du back-end
-      setUsers(updatedUsers);
-      
-      setShowForm(false);
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour:", error);
-      alert("Échec de la mise à jour de l'utilisateur.");
+
+    if (isEditing) {
+      try {
+        const res = await axios.put(`/updateuser/${newUser._id}`, newUser);
+        const updatedUsers = [...users];
+        updatedUsers[editIndex] = res.data;
+        setUsers(updatedUsers);
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour:", error);
+        alert("Échec de la mise à jour de l'utilisateur.");
+      }
+    } else {
+      try {
+        const res = await axios.post("/adduser", newUser);
+        setUsers([...users, res.data]);
+      } catch (error) {
+        console.error("Erreur lors de l'ajout:", error);
+        alert("Échec de l'ajout de l'utilisateur.");
+      }
     }
+
+    setShowForm(false);
+    setIsEditing(false);
+    setNewUser({
+      nom: "",
+      prenom: "",
+      email: "",
+      _id: "",
+      role: "",
+      tel: "",
+      password: ""
+    });
   };
-  
 
   const handleDeleteUser = async (index) => {
     const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?");
     if (confirmDelete) {
       try {
         const userId = users[index]._id;
-        await axios.delete(`/deleteuser/${userId}`); // <-- appel à l'API backend
+        await axios.delete(`/deleteuser/${userId}`);
         const updatedUsers = users.filter((_, i) => i !== index);
         setUsers(updatedUsers);
       } catch (error) {
@@ -71,12 +89,11 @@ export default function CardTable({ color }) {
       }
     }
   };
-  
 
   const handleEditUser = (index) => {
-    setNewUser({ 
+    setNewUser({
       ...users[index],
-      password: "" // Réinitialiser le mot de passe lors de l'édition
+      password: ""
     });
     setIsEditing(true);
     setEditIndex(index);
@@ -90,6 +107,27 @@ export default function CardTable({ color }) {
       </div>
 
       <div className="overflow-x-auto p-4">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              setNewUser({
+                nom: "",
+                prenom: "",
+                email: "",
+                _id: "",
+                role: "",
+                tel: "",
+                password: ""
+              });
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm"
+          >
+            + Ajouter un utilisateur
+          </button>
+        </div>
+
         <table className="w-full text-sm text-left text-white">
           <thead className="text-xs uppercase bg-lightBlue-800 text-blueGray-100">
             <tr>
@@ -105,7 +143,7 @@ export default function CardTable({ color }) {
           <tbody className="bg-lightBlue-900 divide-y divide-blueGray-700">
             {users.map((user, index) => (
               <tr key={user._id} className="hover:bg-lightBlue-800">
-                <td className="px-6 py-4">{user._id}</td> {/* Affiche l'_id de MongoDB */}
+                <td className="px-6 py-4">{user._id}</td>
                 <td className="px-6 py-4">{user.nom}</td>
                 <td className="px-6 py-4">{user.prenom}</td>
                 <td className="px-6 py-4">{user.email}</td>
@@ -131,24 +169,26 @@ export default function CardTable({ color }) {
         </table>
 
         {showForm && (
-          <form onSubmit={handleUpdateUser} className="mt-6 bg-lightBlue-900 text-white p-6 rounded shadow-md">
+          <form onSubmit={handleSubmitUser} className="mt-6 bg-lightBlue-900 text-white p-6 rounded shadow-md">
             <h4 className="text-lg font-semibold mb-4 text-white">
-              Modifier l'utilisateur
+              {isEditing ? "Modifier l'utilisateur" : "Ajouter un nouvel utilisateur"}
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm mb-1" htmlFor="_id">ID</label>
-                <input
-                  id="_id"
-                  type="text"
-                  name="_id"
-                  value={newUser._id}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded cursor-not-allowed"
-                  disabled
-                  readOnly
-                />
-              </div>
+              {isEditing && (
+                <div>
+                  <label className="block text-sm mb-1" htmlFor="_id">ID</label>
+                  <input
+                    id="_id"
+                    type="text"
+                    name="_id"
+                    value={newUser._id}
+                    className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded cursor-not-allowed"
+                    disabled
+                    readOnly
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm mb-1" htmlFor="nom">Nom</label>
                 <input
@@ -209,18 +249,20 @@ export default function CardTable({ color }) {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm mb-1" htmlFor="password">Mot de passe</label>
-                <input
-                  id="password"
-                  type="password"
-                  name="password"
-                  placeholder="Nouveau mot de passe"
-                  value={newUser.password}
-                  onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
-                />
-              </div>
+              {isEditing && (
+                <div>
+                  <label className="block text-sm mb-1" htmlFor="password">Nouveau mot de passe</label>
+                  <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    placeholder="Laisser vide pour inchangé"
+                    value={newUser.password}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3">
@@ -235,7 +277,7 @@ export default function CardTable({ color }) {
                 type="submit"
                 className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-6 py-2 rounded shadow"
               >
-                Modifier
+                {isEditing ? "Modifier" : "Ajouter"}
               </button>
             </div>
           </form>
@@ -245,6 +287,3 @@ export default function CardTable({ color }) {
   );
 }
 
-CardTable.propTypes = {
-  color: PropTypes.oneOf(["light", "dark"]),
-};

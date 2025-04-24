@@ -2,16 +2,16 @@ import React from "react";
 
 // components
 
-import NewTicket from "components/Ticket/NewTicket.js";
+import NewTicket from "components/Cards/TicketTable";
 
 export default function Ticket() {
   return (
     <>
-      <div className="flex flex-wrap">
-        <div className="w-full px-4">
-          <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded">
+     <div className="flex flex-wrap mt-4">
+     <div className="w-full mb-12 px-4">
+         
             <NewTicket />
-          </div>
+        
         </div>
       </div>
     </>

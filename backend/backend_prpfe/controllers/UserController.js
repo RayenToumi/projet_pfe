@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const userModal = require('../models/UserSchema');
-const crypto = require('crypto'); // Pour générer un mot de passe aléatoire
+const crypto = require('crypto'); 
 
 // Configuration du transporteur d'email
 const transporter = nodemailer.createTransport({
