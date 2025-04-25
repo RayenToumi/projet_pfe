@@ -51,3 +51,49 @@ module.exports.getAlltickets = async (req, res) => {
       });
     }
   };
+  module.exports.deleteTicket = async (req, res) => {
+    try {
+      const ticketId = req.params.id;
+      const deletedTicket = await TicketModel.findByIdAndDelete(ticketId);
+  
+      if (!deletedTicket) {
+        return res.status(404).json({ message: "Ticket non trouvé" });
+      }
+      res.status(200).json({ message: "Ticket supprimé avec succès" });
+    } catch (error) {
+      res.status(500).json({
+        error: "Erreur lors de la suppression du ticket",
+        details: error.message
+      });
+    }
+  };
+  // Mettre à jour un ticket par ID
+  module.exports.updateTicket = async (req, res) => {
+    try {
+      const ticketId = req.params.id;
+      const updates = req.body;
+  
+      const updatedTicket = await TicketModel.findByIdAndUpdate(ticketId, updates, {
+        new: true,
+        runValidators: true
+      });
+  
+      if (!updatedTicket) {
+        return res.status(404).json({ message: "Ticket non trouvé" });
+      }
+  
+      res.status(200).json({
+        message: "Ticket mis à jour avec succès",
+        ticket: {
+          ...updatedTicket._doc,
+          date: updatedTicket.date.toLocaleDateString("fr-FR"),
+          createdAt: updatedTicket.createdAt.toLocaleDateString("fr-FR")
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Erreur lors de la mise à jour du ticket",
+        details: error.message
+      });
+    }
+  };

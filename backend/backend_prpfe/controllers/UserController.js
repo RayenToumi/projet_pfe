@@ -30,7 +30,12 @@ module.exports.getAllUsers = async (req, res) => {
 // Ajouter un utilisateur
 module.exports.addUser = async (req, res) => {
   try {
-    const { nom, prenom, email, tel, role } = req.body;
+    const { nom, prenom, email, tel, role, specialite } = req.body;
+
+    // Vérification de la présence de la spécialité si le rôle est technicien
+    if (role === 'technicien' && !specialite) {
+      return res.status(400).json({ error: "La spécialité est obligatoire pour un technicien." });
+    }
 
     // Vérifier si l'email existe déjà
     const existingUser = await userModal.findOne({ email });
@@ -39,41 +44,34 @@ module.exports.addUser = async (req, res) => {
     }
 
     // Générer un mot de passe aléatoire de 10 caractères
-    const rawPassword = crypto.randomBytes(5).toString('hex'); // Générer un mot de passe aléatoire
+    const rawPassword = crypto.randomBytes(5).toString('hex');
 
     const newUser = new userModal({
       nom,
       prenom,
       email,
-      password: rawPassword, // Mot de passe en clair, sera hashé automatiquement par Mongoose
+      password: rawPassword,
       tel,
-      role: role || 'user' // Défaut à "user" si aucun rôle n'est spécifié
+      role: role || 'utilisateur', // Défaut à "user" si aucun rôle n'est spécifié
+      specialite: role === 'technicien' ? specialite : undefined // Ajouter la spécialité si le rôle est technicien
     });
 
     const userAdded = await newUser.save();
 
-    // Envoyer un e-mail avec le mot de passe
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: userAdded.email,
-        subject: 'Votre mot de passe',
-        text: `Bonjour ${userAdded.prenom},\n\nVotre compte a été créé avec succès.\nVoici votre mot de passe : ${rawPassword}\n\nMerci.`
-      });
-      console.log('Email de bienvenue envoyé à', userAdded.email);
-    } catch (emailError) {
-      console.error('Erreur lors de l\'envoi de l\'email:', emailError);  // Afficher l'erreur détaillée
-      return res.status(500).json({
-        error: 'Erreur lors de l\'envoi de l\'email',
-        details: emailError  // Inclure l'objet complet de l'erreur
-      });
-    }
+    // Envoi de l'email comme avant
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: userAdded.email,
+      subject: 'Votre mot de passe',
+      text: `Bonjour ${userAdded.prenom},\n\nVotre compte a été créé avec succès.\nVoici votre mot de passe : ${rawPassword}\n\nMerci.`
+    });
 
     res.status(201).json(userAdded);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // Supprimer un utilisateur
 module.exports.deleteUser = async (req, res) => {

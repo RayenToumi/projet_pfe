@@ -1,289 +1,722 @@
-import React, { useEffect, useState } from "react";
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faPen } from "@fortawesome/free-solid-svg-icons";
+import { FaFilter, FaEdit, FaTrash } from "react-icons/fa";
+import { X } from "lucide-react";
 
 export default function CardTable({ color }) {
-  const [users, setUsers] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+  const [items, setItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterRole, setFilterRole] = useState("");
+  const [filterId, setFilterId] = useState("");
+
+  const [modalOuvert, setModalOuvert] = useState(false);
   const [newUser, setNewUser] = useState({
     nom: "",
     prenom: "",
     email: "",
-    _id: "",
+    telephone: "",
     role: "",
-    tel: "",
-    password: ""
+    password: "",
+    specialite: "", // Ajouté
   });
-  const [isEditing, setIsEditing] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
+  const [errors, setErrors] = useState({});
 
-  const getUsers = async () => {
-    try {
-      const res = await axios.get("/allusers");
-      if (res.data) {
-        setUsers(res.data);
-        console.log("Users data:", res.data);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la récupération des utilisateurs :", error);
-    }
-  };
+  const [editModalOuvert, setEditModalOuvert] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editErrors, setEditErrors] = useState({});
+
+  const [deleteModalOuvert, setDeleteModalOuvert] = useState(false);
+  const [userIdToDelete, setUserIdToDelete] = useState(null);
 
   useEffect(() => {
-    getUsers();
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/allusers');
+        const data = await response.json();
+        const formattedUsers = data.map(user => ({
+          id: user._id,
+          nom: user.nom,
+          prenom: user.prenom,
+          email: user.email,
+          telephone: user.tel,
+          role: user.role,
+          password: ''
+        }));
+        setItems(formattedUsers);
+      } catch (error) {
+        console.error("Erreur lors du chargement des utilisateurs:", error);
+      }
+    };
+    fetchUsers();
   }, []);
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     setNewUser({ ...newUser, [e.target.name]: e.target.value });
   };
 
-  const handleSubmitUser = async (e) => {
-    e.preventDefault();
+  const handleEditChange = (e) => {
+    setEditingUser({ ...editingUser, [e.target.name]: e.target.value });
+  };
 
-    if (isEditing) {
-      try {
-        const res = await axios.put(`/updateuser/${newUser._id}`, newUser);
-        const updatedUsers = [...users];
-        updatedUsers[editIndex] = res.data;
-        setUsers(updatedUsers);
-      } catch (error) {
-        console.error("Erreur lors de la mise à jour:", error);
-        alert("Échec de la mise à jour de l'utilisateur.");
-      }
-    } else {
-      try {
-        const res = await axios.post("/adduser", newUser);
-        setUsers([...users, res.data]);
-      } catch (error) {
-        console.error("Erreur lors de l'ajout:", error);
-        alert("Échec de l'ajout de l'utilisateur.");
-      }
+  const validateForm = (user) => {
+    const errors = {};
+    // ... validations existantes
+    if (user.role === 'technicien' && !user.specialite.trim()) {
+      errors.specialite = "La spécialité est requise pour un technicien.";
     }
-
-    setShowForm(false);
-    setIsEditing(false);
-    setNewUser({
-      nom: "",
-      prenom: "",
-      email: "",
-      _id: "",
-      role: "",
-      tel: "",
-      password: ""
-    });
+    return errors;
   };
 
-  const handleDeleteUser = async (index) => {
-    const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?");
-    if (confirmDelete) {
-      try {
-        const userId = users[index]._id;
-        await axios.delete(`/deleteuser/${userId}`);
-        const updatedUsers = users.filter((_, i) => i !== index);
-        setUsers(updatedUsers);
-      } catch (error) {
-        console.error("Erreur lors de la suppression:", error);
-        alert("Échec de la suppression de l'utilisateur.");
+  const validateEditForm = (user) => {
+    const errors = {};
+    if (!user.nom.trim()) errors.nom = "Le nom est requis.";
+    if (!user.prenom.trim()) errors.prenom = "Le prénom est requis.";
+    if (!user.email.trim()) errors.email = "L'email est requis.";
+    if (!user.telephone.trim()) errors.telephone = "Le téléphone est requis.";
+    if (!user.role) errors.role = "Le rôle est requis.";
+    return errors;
+  };
+
+  const handleCreateSubmit = async () => {
+    const errors = validateForm(newUser);
+    if (Object.keys(errors).length > 0) return setErrors(errors);
+
+    try {
+      const userData = {
+        nom: newUser.nom,
+        prenom: newUser.prenom,
+        email: newUser.email,
+        tel: newUser.telephone,
+        password: newUser.password,
+        role: newUser.role,
+        specialite: newUser.role === 'technicien' ? newUser.specialite : undefined,
+      };
+      
+
+      const response = await fetch('/adduser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Erreur inconnue');
       }
+
+      setItems([...items, {
+        id: data._id,
+        ...userData,
+        telephone: userData.tel,
+        specialite: userData.specialite
+      }]);
+      
+      setModalOuvert(false);
+      setNewUser({ nom: "", prenom: "", email: "", telephone: "", role: "", password: "" });
+      setErrors({});
+      
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert(`Erreur lors de la création : ${error.message}`);
     }
   };
 
-  const handleEditUser = (index) => {
-    setNewUser({
-      ...users[index],
-      password: ""
-    });
-    setIsEditing(true);
-    setEditIndex(index);
-    setShowForm(true);
+  const handleEditSubmit = async () => {
+    const errors = validateEditForm(editingUser);
+    if (Object.keys(errors).length > 0) return setEditErrors(errors);
+
+    try {
+      const userData = {
+        nom: editingUser.nom,
+        prenom: editingUser.prenom,
+        email: editingUser.email,
+        tel: editingUser.telephone,
+        role: editingUser.role,
+        ...(editingUser.password && { password: editingUser.password })
+      };
+
+      const response = await fetch(`/updateuser/${editingUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+
+      if (!response.ok) throw new Error('Échec de la mise à jour');
+      
+      const data = await response.json();
+      setItems(items.map(item => 
+        item.id === editingUser.id ? { 
+          ...item,
+          ...userData,
+          telephone: userData.tel
+        } : item
+      ));
+      setEditModalOuvert(false);
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert("Erreur lors de la mise à jour de l'utilisateur");
+    }
   };
+
+  const confirmDelete = async () => {
+    
+    try {
+      const response = await fetch(`/deleteuser/${userIdToDelete}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Échec de la suppression');
+      
+      setItems(items.filter(item => item.id !== userIdToDelete));
+      setDeleteModalOuvert(false);
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert("Erreur lors de la suppression de l'utilisateur");
+    }
+  };
+  const userToDelete = items.find(item => item.id === userIdToDelete);
+
+  const filteredItems = items.filter(item => {
+    const matchesId = filterId ? item.id.toString().includes(filterId) : true;
+    const matchesSearch = searchQuery
+      ? item.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.prenom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.email.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    const matchesRole = filterRole ? item.role === filterRole : true;
+
+    return matchesId && matchesSearch && matchesRole;
+  });
+
+  const roleStyle = (role) => ({
+    padding: "0.25rem 0.5rem",
+    borderRadius: "9999px",
+    fontSize: "0.75rem",
+    fontWeight: "500",
+    backgroundColor:
+      role === "admin" ? "#dcfce7" :
+      role === "manager" ? "#ffedd5" :
+      role === "technicien" ? "#fee2e2" : "#f3f4f6",
+    color:
+      role === "admin" ? "#16a34a" :
+      role === "manager" ? "#ea580c" :
+      role === "technicien" ? "#dc2626" : "#374151",
+  });
 
   return (
-    <div className={"relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg " + (color === "light" ? "bg-white" : "bg-lightBlue-900 text-white")}>
-      <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-        <h3 className={"font-bold text-xl " + (color === "light" ? "text-blueGray-700" : "text-white")}>Liste des utilisateurs</h3>
+    <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
+      color === "light" ? "bg-white" : "bg-slate-800 text-white"
+    }`}>
+      
+      <style jsx>{`
+        .gp-action-icon {
+          padding: 0.45rem;
+          border-radius: 0.375rem;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .gp-edit {
+          background-color: #e0f2fe;
+          color: #0284c7;
+        }
+        .gp-edit:hover {
+          background-color: #bae6fd;
+        }
+        .gp-delete {
+          background-color: #fee2e2;
+          color: #dc2626;
+        }
+        .gp-delete:hover {
+          background-color: #fecaca;
+        }
+        .gp-add-button {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background-color: #0ea5e9;
+          color: white;
+          padding: 0.55rem 2.5rem;
+          border-radius: 0.375rem;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+        .gp-add-button:hover {
+          background-color: #0284c7;
+        }
+
+        .gp-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 50;
+        }
+        .gp-modal-container {
+          background-color: white;
+          border-radius: 0.75rem;
+          padding: 2rem;
+          width: 90%;
+          max-width: 500px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .gp-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+        }
+
+        .gp-form-group {
+          margin-bottom: 1.5rem;
+        }
+        .gp-form-input {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #ccc;
+          border-radius: 0.375rem;
+        }
+        .gp-disabled-input {
+          background-color: #f3f4f6;
+          cursor: not-allowed;
+        }
+        .gp-readonly-text {
+          padding: 0.5rem;
+          background-color: #f3f4f6;
+          border-radius: 0.375rem;
+          display: block;
+        }
+
+        .gp-btn {
+          padding: 0.5rem 1.25rem;
+          border-radius: 0.375rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .gp-btn-save {
+          background-color: #0ea5e9;
+          color: white;
+        }
+        .gp-btn-save:hover {
+          background-color: #0284c7;
+        }
+        .gp-btn-cancel {
+          background-color: #f3f4f6;
+          color: #374151;
+        }
+        .gp-btn-cancel:hover {
+          background-color: #e5e7eb;
+        }
+        .gp-btn-danger {
+          background-color: #dc2626;
+          color: white;
+        }
+        .gp-btn-danger:hover {
+          background-color: #b91c1c;
+        }
+
+        .gp-delete-modal-content {
+          text-align: center;
+          padding: 2rem;
+        }
+        .gp-delete-buttons {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          margin-top: 2rem;
+        }
+      `}</style>
+
+      <div className="px-6 pt-6 border-b-2 border-gray-300">
+        <h1 className={`text-2xl font-bold text-center ${
+          color === "light" ? "text-gray-800" : "text-white"
+        }`}>
+          Liste des utilisateurs
+        </h1>
       </div>
 
-      <div className="overflow-x-auto p-4">
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => {
-              setShowForm(true);
-              setIsEditing(false);
-              setNewUser({
-                nom: "",
-                prenom: "",
-                email: "",
-                _id: "",
-                role: "",
-                tel: "",
-                password: ""
-              });
-            }}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm"
+      <div className="flex justify-between px-6 pt-6 pb-4 items-center gap-4">
+        <input
+          type="text"
+          placeholder="🔍 Rechercher par ID..."
+          value={filterId}
+          onChange={(e) => setFilterId(e.target.value)}
+          className="w-full sm:w-64 px-4 py-2 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
+        />
+
+        <div className="flex gap-4 items-center">
+          <FaFilter className="text-gray-700 text-xl mr-2" />
+
+          <select
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+            className="w-50 sm:w-64 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
           >
-            + Ajouter un utilisateur
+            <option value="">Tous les rôles</option>
+            <option value="admin">Admin</option>
+            <option value="utilisateur">Utilisateur</option>
+            <option value="manager">Manager</option>
+            <option value="technicien">Technicien</option>
+          </select>
+
+          <button 
+            className="gp-add-button" 
+            onClick={() => setModalOuvert(true)}
+          >
+            <span>+</span>
+            <span>Ajouter </span>
           </button>
         </div>
+      </div>
 
-        <table className="w-full text-sm text-left text-white">
-          <thead className="text-xs uppercase bg-lightBlue-800 text-blueGray-100">
-            <tr>
-              <th className="px-6 py-3">ID</th>
-              <th className="px-6 py-3">Nom</th>
-              <th className="px-6 py-3">Prénom</th>
-              <th className="px-6 py-3">Email</th>
-              <th className="px-6 py-3">Rôle</th>
-              <th className="px-6 py-3">Téléphone</th>
-              <th className="px-6 py-3 text-right">Actions</th>
+      <div className="overflow-x-auto px-6 pt-4 pb-14">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className={`text-left ${
+              color === "light" ? "bg-gray-50 text-gray-500" : "bg-slate-700 text-slate-200"
+            }`}>
+              <th className="px-6 py-4 font-medium">ID</th>
+              <th className="px-6 py-4 font-medium">Nom</th>
+              <th className="px-6 py-4 font-medium">Prénom</th>
+              <th className="px-6 py-4 font-medium">Email</th>
+              <th className="px-6 py-4 font-medium">Téléphone</th>
+              <th className="px-6 py-4 font-medium">Rôle</th>
+              <th className="px-6 py-4 font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-lightBlue-900 divide-y divide-blueGray-700">
-            {users.map((user, index) => (
-              <tr key={user._id} className="hover:bg-lightBlue-800">
-                <td className="px-6 py-4">{user._id}</td>
-                <td className="px-6 py-4">{user.nom}</td>
-                <td className="px-6 py-4">{user.prenom}</td>
-                <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">{user.role}</td>
-                <td className="px-6 py-4">{user.tel}</td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleDeleteUser(index)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded mr-2 text-xs shadow"
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                  <button
-                    onClick={() => handleEditUser(index)}
-                    className="bg-lightBlue-500 hover:bg-lightBlue-600 text-white px-3 py-1 rounded text-xs shadow"
-                  >
-                    <FontAwesomeIcon icon={faPen} />
-                  </button>
+          <tbody>
+            {filteredItems.map((item) => (
+              <tr 
+                key={item.id} 
+                className={`border-t ${
+                  color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"
+                } transition-colors`}
+              >
+                <td className="px-6 py-4">{item.id}</td>
+                <td className="px-6 py-4">{item.nom}</td>
+                <td className="px-6 py-4">{item.prenom}</td>
+                <td className="px-6 py-4">{item.email}</td>
+                <td className="px-6 py-4">{item.telephone}</td>
+                <td className="px-6 py-4">
+                  <span style={roleStyle(item.role)}>
+                    {item.role}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex">
+                    <button
+                      onClick={() => {
+                        setEditingUser(item);
+                        setEditModalOuvert(true);
+                      }}
+                      className="gp-action-icon gp-edit mr-2"
+                      title="Modifier"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setUserIdToDelete(item.id);
+                        setDeleteModalOuvert(true);
+                      }}
+                      className="gp-action-icon gp-delete"
+                      title="Supprimer"
+                    >
+                      <FaTrash size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
 
-        {showForm && (
-          <form onSubmit={handleSubmitUser} className="mt-6 bg-lightBlue-900 text-white p-6 rounded shadow-md">
-            <h4 className="text-lg font-semibold mb-4 text-white">
-              {isEditing ? "Modifier l'utilisateur" : "Ajouter un nouvel utilisateur"}
-            </h4>
+      {modalOuvert && (
+        <div className="gp-modal-overlay">
+          <div className="gp-modal-container">
+            <div className="gp-modal-header">
+              <h2 className="text-xl font-bold">Créer un utilisateur</h2>
+              <button onClick={() => setModalOuvert(false)}>
+                <X size={24} />
+              </button>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              {isEditing && (
-                <div>
-                  <label className="block text-sm mb-1" htmlFor="_id">ID</label>
-                  <input
-                    id="_id"
-                    type="text"
-                    name="_id"
-                    value={newUser._id}
-                    className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded cursor-not-allowed"
-                    disabled
-                    readOnly
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-sm mb-1" htmlFor="nom">Nom</label>
+            <div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Nom</label>
                 <input
-                  id="nom"
                   type="text"
                   name="nom"
                   value={newUser.nom}
-                  onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
-                  required
+                  onChange={handleChange}
+                  className="gp-form-input"
                 />
+                {errors.nom && <p className="text-red-500 text-sm">{errors.nom}</p>}
               </div>
-              <div>
-                <label className="block text-sm mb-1" htmlFor="prenom">Prénom</label>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Prénom</label>
                 <input
-                  id="prenom"
                   type="text"
                   name="prenom"
                   value={newUser.prenom}
-                  onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
-                  required
+                  onChange={handleChange}
+                  className="gp-form-input"
                 />
+                {errors.prenom && <p className="text-red-500 text-sm">{errors.prenom}</p>}
               </div>
-              <div>
-                <label className="block text-sm mb-1" htmlFor="email">Email</label>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Email</label>
                 <input
-                  id="email"
                   type="email"
                   name="email"
                   value={newUser.email}
-                  onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
-                  required
+                  onChange={handleChange}
+                  className="gp-form-input"
                 />
+                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
               </div>
-              <div>
-                <label className="block text-sm mb-1" htmlFor="role">Rôle</label>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Téléphone</label>
                 <input
-                  id="role"
-                  type="text"
+                  type="tel"
+                  name="telephone"
+                  value={newUser.telephone}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                />
+                {errors.telephone && <p className="text-red-500 text-sm">{errors.telephone}</p>}
+              </div>
+
+             
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Rôle</label>
+                <select
                   name="role"
                   value={newUser.role}
-                  onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
-                  required
-                />
+                  onChange={handleChange}
+                  className="gp-form-input"
+                >
+                  <option value="">-- Sélectionner --</option>
+                  <option value="admin">Admin</option>
+                  <option value="utilisateur">Utilisateur</option>
+                  <option value="manager">Manager</option>
+                  <option value="technicien">Technicien</option>
+                </select>
+                {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
               </div>
-              <div>
-                <label className="block text-sm mb-1" htmlFor="tel">Téléphone</label>
-                <input
-                  id="tel"
-                  type="text"
-                  name="tel"
-                  value={newUser.tel}
-                  onChange={handleInputChange}
-                  className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
-                  required
-                />
+              {newUser.role === 'technicien' && (
+  <div className="gp-form-group">
+    <label className="block font-semibold mb-1">Spécialité</label>
+    <input
+      type="text"
+      name="specialite"
+      value={newUser.specialite}
+      onChange={handleChange}
+      className="gp-form-input"
+    />
+    {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
+  </div>
+)}
+           
+
+              <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
+                <button 
+                  onClick={() => setModalOuvert(false)} 
+                  className="gp-btn gp-btn-cancel"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleCreateSubmit} 
+                  className="gp-btn gp-btn-save"
+                >
+                  Ajouter
+                </button>
               </div>
-              {isEditing && (
-                <div>
-                  <label className="block text-sm mb-1" htmlFor="password">Nouveau mot de passe</label>
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    placeholder="Laisser vide pour inchangé"
-                    value={newUser.password}
-                    onChange={handleInputChange}
-                    className="w-full p-2 bg-lightBlue-800 border border-lightBlue-700 text-white rounded"
-                  />
-                </div>
-              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editModalOuvert && editingUser && (
+        <div className="gp-modal-overlay">
+          <div className="gp-modal-container">
+            <div className="gp-modal-header">
+              <h2 className="text-xl font-bold">Modifier l'utilisateur</h2>
+              <button onClick={() => setEditModalOuvert(false)}>
+                <X size={24} />
+              </button>
             </div>
 
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="bg-gray-500 hover:bg-gray-600 text-white text-sm font-semibold px-6 py-2 rounded shadow"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-6 py-2 rounded shadow"
-              >
-                {isEditing ? "Modifier" : "Ajouter"}
-              </button>
+            <div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">ID</label>
+                <div className="gp-readonly-text">{editingUser.id}</div>
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Nom</label>
+                <input
+                  type="text"
+                  name="nom"
+                  value={editingUser.nom}
+                  onChange={handleEditChange}
+                  className="gp-form-input"
+                />
+                {editErrors.nom && <p className="text-red-500 text-sm">{editErrors.nom}</p>}
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Prénom</label>
+                <input
+                  type="text"
+                  name="prenom"
+                  value={editingUser.prenom}
+                  onChange={handleEditChange}
+                  className="gp-form-input"
+                />
+                {editErrors.prenom && <p className="text-red-500 text-sm">{editErrors.prenom}</p>}
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editingUser.email}
+                  onChange={handleEditChange}
+                  className="gp-form-input"
+                />
+                {editErrors.email && <p className="text-red-500 text-sm">{editErrors.email}</p>}
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Téléphone</label>
+                <input
+                  type="tel"
+                  name="telephone"
+                  value={editingUser.telephone}
+                  onChange={handleEditChange}
+                  className="gp-form-input"
+                />
+                {editErrors.telephone && <p className="text-red-500 text-sm">{editErrors.telephone}</p>}
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Mot de passe</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={editingUser.password || ''}
+                  onChange={handleEditChange}
+                  className="gp-form-input"
+                  placeholder="Nouveau mot de passe"
+                />
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Rôle</label>
+                <select
+                  name="role"
+                  value={editingUser.role}
+                  onChange={handleEditChange}
+                  className="gp-form-input"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="utilisateur">Utilisateur</option>
+                  <option value="manager">Manager</option>
+                  <option value="technicien">Technicien</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
+                <button 
+                  onClick={() => setEditModalOuvert(false)} 
+                  className="gp-btn gp-btn-cancel"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleEditSubmit} 
+                  className="gp-btn gp-btn-save"
+                >
+                  Enregistrer
+                </button>
+              </div>
             </div>
-          </form>
-        )}
+          </div>
+        </div>
+      )}
+
+{deleteModalOuvert && (
+  <div className="gp-modal-overlay">
+    <div className="gp-modal-container">
+      <div className="gp-modal-header">
+        <h2 className="text-xl font-bold">Confirmer la suppression</h2>
+        <button onClick={() => setDeleteModalOuvert(false)}>
+          <X size={24} />
+        </button>
       </div>
+
+      <div className="gp-delete-modal-content">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-16 w-16 text-red-600 mx-auto mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        
+        <p className="text-lg font-medium">
+          Êtes-vous sûr de vouloir supprimer l'utilisateur <strong> {userToDelete?.nom} {userToDelete?.prenom} </strong>?
+        </p>
+
+        <div className="gp-delete-buttons">
+          <button
+            onClick={() => setDeleteModalOuvert(false)}
+            className="gp-btn gp-btn-cancel"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="gp-btn gp-btn-danger"
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
 
+CardTable.defaultProps = {
+  color: "light",
+};
+
+CardTable.propTypes = {
+  color: PropTypes.oneOf(["light", "dark"]),
+};

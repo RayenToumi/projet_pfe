@@ -5,7 +5,13 @@ import Footerr from "components/Footers/Footerr";
 function MyTickets() {
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const [searchId, setSearchId] = useState(""); // État pour la recherche
+  const [searchId, setSearchId] = useState("");
+
+  const getShortCode = (id) => {
+    const strId = String(id);
+    if (!strId || strId.length < 10) return "XXXX";
+    return strId.substring(6, 10); // index 6 inclus, 10 exclu
+  };
 
   useEffect(() => {
     document.body.style.margin = "0";
@@ -13,30 +19,54 @@ function MyTickets() {
     document.body.style.display = "flex";
     document.body.style.flexDirection = "column";
 
-    const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
-    setTickets(storedTickets);
+    const fetchTickets = async () => {
+      try {
+        const response = await fetch('/alltickets');
+        const data = await response.json();
+        setTickets(data);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des tickets:", error);
+      }
+    };
+
+    fetchTickets();
   }, []);
 
-
-  const status = (statut) => ({
-    padding: "0.3rem 0.8rem",
-    borderRadius: "4px",
-    fontSize: "0.85rem",
-    backgroundColor: {
-      "Ouvert": "#ffebee",
-      "En cours": "#e3f2fd",
-      "Résolu": "#e8f5e9",
-    }[statut],
-    color: {
-      "Ouvert": "#c62828",
-      "En cours": "#1565c0",
-      "Résolu": "#2e7d32",
-    }[statut],
-    fontWeight: "bold",
-  });
+  const badgeStyle = (status) => {
+    const statusNormalized = status?.toLowerCase() || ''; // Normalisation en minuscules
+  
+    return {
+      padding: "0.25rem 0.5rem",
+      borderRadius: "0px", // Bordure carrée
+      fontSize: "0.75rem",
+      fontWeight: "500",
+      backgroundColor:
+        statusNormalized === "ouvert" ? "#FEE2E2" : // Rouge clair pour "Ouvert"
+        statusNormalized === "en cours" ? "#FFEDD5" : // Orange clair pour "En cours"
+        statusNormalized === "fermé" ? "#DCFCE7" : // Vert clair pour "Fermé"
+        "#FFFFFF", // Valeur par défaut si aucun statut ne correspond
+      color:
+        statusNormalized === "ouvert" ? "#DC2626" : // Rouge foncé pour "Ouvert"
+        statusNormalized === "en cours" ? "#C2410C" : // Orange foncé pour "En cours"
+        statusNormalized === "fermé" ? "#065F46" : // Vert foncé pour "Fermé"
+        "#000000", // Valeur par défaut si aucun statut ne correspond
+      textAlign: "center",
+      minWidth: "80px",
+      display: "inline-block",
+      border: "1px solid", // Bordure de contraste
+      borderColor:
+        statusNormalized === "ouvert" ? "#DC2626" : // Rouge foncé pour "Ouvert"
+        statusNormalized === "en cours" ? "#C2410C" : // Orange foncé pour "En cours"
+        statusNormalized === "fermé" ? "#065F46" : // Vert foncé pour "Fermé"
+        "#000000", // Valeur par défaut si aucun statut ne correspond
+    };
+  };
+  
+  
+  
 
   const filteredTickets = tickets.filter(ticket =>
-    searchId === "" || ticket.id.toString().includes(searchId)
+    searchId === "" || ticket._id?.toString().includes(searchId)
   );
 
   return (
@@ -44,8 +74,8 @@ function MyTickets() {
       <IndexNavbar />
       <div style={container}>
         <div style={contentWrapper}>
-          <img 
-            src="/images/support-banner.jpg" 
+          <img
+            src="/images/support-banner.jpg"
             alt="Bannière Support"
             style={bannerImage}
           />
@@ -72,20 +102,25 @@ function MyTickets() {
 
           <div style={ticketGrid}>
             <div style={ticketList}>
-              {filteredTickets.map((ticket) => (
-                <div 
-                  key={ticket.id}
-                  style={ticketItem} 
-                  onClick={() => setSelectedTicket(ticket)}
-                >
-                  <div style={ticketHeader}>
-                    <span style={ticketId}>#{ticket.id}</span>
-                    <span style={status(ticket.statut)}>{ticket.statut}</span>
+              {filteredTickets.map((ticket) => {
+                console.log("TICKET:", ticket); // Pour debug
+                return (
+                  <div
+                    key={ticket._id}
+                    style={ticketItem}
+                    onClick={() => setSelectedTicket(ticket)}
+                  >
+                    <div style={ticketHeader}>
+                      <span style={ticketId}>
+                        {ticket._id ? `#${getShortCode(ticket._id)}` : "ID non disponible"}
+                      </span>
+                      <span style={badgeStyle(ticket.statut)}>{ticket.statut}</span>
+                    </div>
+                    <h3 style={ticketTitle}>{ticket.sujet}</h3>
+                    <p style={ticketDate}>{ticket.date?.slice(0, 10)}</p>
                   </div>
-                  <h3 style={ticketTitle}>{ticket.sujet}</h3>
-                  <p style={ticketDate}>{ticket.date}</p>
-                </div>
-              ))}
+                );
+              })}
               {filteredTickets.length === 0 && (
                 <p style={{ textAlign: "center", color: "#999" }}>Aucun ticket trouvé.</p>
               )}
@@ -100,16 +135,17 @@ function MyTickets() {
                 <div style={detailsContent}>
                   <div style={detailRow}>
                     <span style={detailLabel}>Numéro :</span>
-                    <span>#{selectedTicket.id}</span>
+                    <span>#{getShortCode(selectedTicket._id)}</span>
                   </div>
                   <div style={detailRow}>
                     <span style={detailLabel}>Statut :</span>
-                    <span style={status(selectedTicket.statut)}>{selectedTicket.statut}</span>
+                    <span style={badgeStyle(selectedTicket.statut)}>{selectedTicket.statut}</span>
                   </div>
                   <div style={detailRow}>
                     <span style={detailLabel}>Date :</span>
-                    <span>{selectedTicket.date}</span>
+                    <span>{selectedTicket.date?.slice(0, 10)}</span>
                   </div>
+
                   <div style={detailDescription}>
                     <p style={detailLabel}>Description :</p>
                     <p>{selectedTicket.description}</p>

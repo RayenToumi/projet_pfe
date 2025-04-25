@@ -1,34 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import PropTypes from "prop-types";
-import { FaFilter } from "react-icons/fa";
+import { FaFilter, FaEdit, FaTrash } from "react-icons/fa";
 import { X } from "lucide-react";
 
-export default function CardTable({ color }) {
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      subject: "Problème d'accès à l'internet",
-      type: "Technique",
-      urgency: "Urgent",
-      status: "En attente",
-      date: "2025-03-29",
-      description: "Le site intranet était inaccessible depuis plusieurs jours.",
-    },
-    {
-      id: 2,
-      subject: "Mise à jour logiciel",
-      type: "Fonctionnel",
-      urgency: "Normal",
-      status: "Terminé",
-      date: "2025-04-15",
-      description: "Mise à jour du logiciel de gestion RH.",
-    },
-  ]);
-
+export default function TicketTable({ color }) {
+  const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterId, setFilterId] = useState("");
 
+  // États création
   const [modalOuvert, setModalOuvert] = useState(false);
   const [newTicket, setNewTicket] = useState({
     subject: "",
@@ -38,94 +20,178 @@ export default function CardTable({ color }) {
   });
   const [errors, setErrors] = useState({});
 
+  // États édition
+  const [editModalOuvert, setEditModalOuvert] = useState(false);
+  const [editingTicket, setEditingTicket] = useState(null);
+  const [editErrors, setEditErrors] = useState({});
+
+  // États suppression
+  const [deleteModalOuvert, setDeleteModalOuvert] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState(null);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const { data } = await axios.get('/alltickets');
+        const formatted = data.map(t => ({
+          id: t._id,
+          subject: t.sujet,
+          type: t.type,
+          urgency: t.urgence,
+          description: t.description,
+          status: t.statut.charAt(0).toUpperCase() + t.statut.slice(1),
+          date: new Date(t.date).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          })
+        }));
+        setItems(formatted);
+      } catch (error) {
+        console.error("Erreur chargement:", error.response?.data);
+      }
+    };
+    fetchTickets();
+  }, [modalOuvert, editModalOuvert, deleteModalOuvert]);
+
+  // Handlers généraux
   const handleChange = (e) => {
     setNewTicket({ ...newTicket, [e.target.name]: e.target.value });
   };
 
-  const handleModalCancel = () => {
-    setModalOuvert(false);
-    setNewTicket({ subject: "", type: "", urgency: "", description: "" });
-    setErrors({});
+  const handleEditChange = (e) => {
+    setEditingTicket({ ...editingTicket, [e.target.name]: e.target.value });
   };
 
-  const handleModalSubmit = () => {
-    const newErrors = {};
-    if (!newTicket.subject.trim()) newErrors.subject = "Le sujet est requis.";
-    if (!newTicket.type) newErrors.type = "Le type est requis.";
-    if (!newTicket.urgency) newErrors.urgency = "L'urgence est requise.";
-    if (!newTicket.description.trim()) newErrors.description = "La description est requise.";
+  // Validation formulaire
+  const validateForm = (ticket, isEdit = false) => {
+    const errors = {};
+    if (!ticket.subject.trim()) errors.subject = "Le sujet est requis.";
+    if (!ticket.type) errors.type = "Le type est requis.";
+    if (!isEdit && !ticket.urgency) errors.urgency = "L'urgence est requise.";
+    if (!ticket.description.trim()) errors.description = "La description est requise.";
+    return errors;
+  };
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-    } else {
-      const newItem = {
-        ...newTicket,
-        id: items.length + 1,
-        status: "En attente",
-        date: new Date().toISOString().split("T")[0],
-      };
-      setItems([...items, newItem]);
-      handleModalCancel();
+  // Création ticket
+  const handleCreateSubmit = async () => {
+    const errors = validateForm(newTicket);
+    if (Object.keys(errors).length > 0) return setErrors(errors);
+
+    try {
+      const response = await axios.post('/addticket', {
+        sujet: newTicket.subject,
+        type: newTicket.type,
+        urgence: newTicket.urgency,
+        description: newTicket.description
+      });
+
+      setItems(prev => [...prev, {
+        id: response.data._id,
+        subject: response.data.sujet,
+        type: response.data.type,
+        urgency: response.data.urgence,
+        description: response.data.description,
+        status: 'Ouvert',
+        date: new Date(response.data.date).toLocaleDateString('fr-FR')
+      }]);
+      
+      setModalOuvert(false);
+      setNewTicket({ subject: "", type: "", urgency: "", description: "" });
+
+    } catch (error) {
+      console.error('Erreur création:', error.response?.data);
     }
   };
 
-  const handleDelete = (id) => {
-    const confirmDelete = window.confirm("Voulez-vous vraiment supprimer ce ticket ?");
-    if (confirmDelete) {
-      setItems(items.filter((item) => item.id !== id));
+  // Édition ticket
+  const handleEditSubmit = async () => {
+    const errors = validateForm(editingTicket, true);
+    if (Object.keys(errors).length > 0) return setEditErrors(errors);
+  
+    try {
+      const updatedStatus = editingTicket.status.toLowerCase();
+  
+      await axios.put(`/updateticket/${editingTicket.id}`, {
+        sujet: editingTicket.subject,
+        type: editingTicket.type,
+        urgence: editingTicket.urgency,
+        description: editingTicket.description,
+        statut: updatedStatus
+      });
+  
+      setEditModalOuvert(false); // Ferme le modal
+    } catch (error) {
+      console.error("Erreur de mise à jour:", error.response?.data);
     }
   };
 
-  const filteredItems = items.filter((item) => {
+  // Suppression ticket
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`/deleteticket/${ticketToDelete}`);
+      setItems(prev => prev.filter(item => item.id !== ticketToDelete));
+      setDeleteModalOuvert(false);
+    } catch (error) {
+      console.error("Erreur de suppression:", error.response?.data);
+    }
+  };
+
+  // Filtrage
+  const filteredItems = items.filter(item => {
     const matchesId = filterId ? item.id.toString().includes(filterId) : true;
     const matchesSearch = searchQuery
       ? item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
-    const matchesType = filterType ? item.urgency === filterType : true;
+    const matchesUrgency = filterType ? item.urgency === filterType : true;
 
-    return matchesId && matchesSearch && matchesType;
+    return matchesId && matchesSearch && matchesUrgency;
   });
 
-  const badgeStyle = {
-    backgroundColor: "#e6fffa",
-    color: "#047857",
+  // Styles
+  const badgeStyle = (status) => ({
     padding: "0.25rem 0.5rem",
     borderRadius: "9999px",
     fontSize: "0.75rem",
     fontWeight: "500",
-  };
+    backgroundColor:
+      status === "Ouvert" ? "#fee2e2" :
+      status === "En cours" ? "#ffedd5" : "#dcfce7",
+    color:
+      status === "Ouvert" ? "#dc2626" :
+      status === "En cours" ? "#ea580c" : "#16a34a",
+  });
 
   return (
-    <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${color === "light" ? "bg-white" : "bg-slate-800 text-white"}`}>
+    <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
+      color === "light" ? "bg-white" : "bg-slate-800 text-white"
+    }`}>
+      
       <style jsx>{`
-        /* Style de base pour tous les boutons d'action */
-        .gp-action-button {
-          padding: 0.375rem;
+        /* Styles de base */
+        .gp-action-icon {
+          padding: 0.45rem;
           border-radius: 0.375rem;
           transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-
-        /* Style spécifique pour le bouton Modifier */
-        .gp-edit-button {
-          background-color: #dbeafe; /* Bleu clair */
-          color: #3b82f6; /* Bleu vif */
+        .gp-edit {
+          background-color: #e0f2fe;
+          color: #0284c7;
         }
-
-        .gp-edit-button:hover {
-          background-color: #bfdbfe; /* Bleu clair plus foncé au survol */
+        .gp-edit:hover {
+          background-color: #bae6fd;
         }
-
-        /* Style spécifique pour le bouton Supprimer */
-        .gp-delete-button {
-          background-color: #fee2e2; /* Rouge clair */
-          color: #ef4444; /* Rouge vif */
+        .gp-delete {
+          background-color: #fee2e2;
+          color: #dc2626;
         }
-
-        .gp-delete-button:hover {
-          background-color: #fecaca; /* Rouge clair plus foncé au survol */
+        .gp-delete:hover {
+          background-color: #fecaca;
         }
-
         .gp-add-button {
           display: flex;
           align-items: center;
@@ -140,6 +206,8 @@ export default function CardTable({ color }) {
         .gp-add-button:hover {
           background-color: #0284c7;
         }
+
+        /* Modals */
         .gp-modal-overlay {
           position: fixed;
           top: 0;
@@ -166,6 +234,8 @@ export default function CardTable({ color }) {
           align-items: center;
           margin-bottom: 1rem;
         }
+
+        /* Formulaire */
         .gp-form-group {
           margin-bottom: 1.5rem;
         }
@@ -175,28 +245,70 @@ export default function CardTable({ color }) {
           border: 1px solid #ccc;
           border-radius: 0.375rem;
         }
+        .gp-disabled-input {
+          background-color: #f3f4f6;
+          cursor: not-allowed;
+        }
+        .gp-readonly-text {
+          padding: 0.5rem;
+          background-color: #f3f4f6;
+          border-radius: 0.375rem;
+          display: block;
+        }
+
+        /* Boutons */
         .gp-btn {
           padding: 0.5rem 1.25rem;
           border-radius: 0.375rem;
           font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
         }
         .gp-btn-save {
           background-color: #0ea5e9;
           color: white;
-          margin-left: 1rem;
+        }
+        .gp-btn-save:hover {
+          background-color: #0284c7;
         }
         .gp-btn-cancel {
           background-color: #f3f4f6;
           color: #374151;
         }
+        .gp-btn-cancel:hover {
+          background-color: #e5e7eb;
+        }
+        .gp-btn-danger {
+          background-color: #dc2626;
+          color: white;
+        }
+        .gp-btn-danger:hover {
+          background-color: #b91c1c;
+        }
+
+        /* Suppression */
+        .gp-delete-modal-content {
+          text-align: center;
+          padding: 2rem;
+        }
+        .gp-delete-buttons {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          margin-top: 2rem;
+        }
       `}</style>
 
+      {/* En-tête */}
       <div className="px-6 pt-6 border-b-2 border-gray-300">
-        <h1 className={`text-2xl font-bold text-center ${color === "light" ? "text-gray-800" : "text-white"}`}>
+        <h1 className={`text-2xl font-bold text-center ${
+          color === "light" ? "text-gray-800" : "text-white"
+        }`}>
           Liste des tickets
         </h1>
       </div>
 
+      {/* Filtres */}
       <div className="flex justify-between px-6 pt-6 pb-4 items-center gap-4">
         <input
           type="text"
@@ -219,17 +331,23 @@ export default function CardTable({ color }) {
             <option value="Normal">Normal</option>
           </select>
 
-          <button className="gp-add-button" onClick={() => setModalOuvert(true)}>
+          <button 
+            className="gp-add-button" 
+            onClick={() => setModalOuvert(true)}
+          >
             <span>+</span>
             <span>Créer</span>
           </button>
         </div>
       </div>
 
+      {/* Tableau */}
       <div className="overflow-x-auto px-6 pt-4 pb-14">
         <table className="w-full border-collapse">
           <thead>
-            <tr className={`text-left ${color === "light" ? "bg-gray-50 text-gray-500" : "bg-slate-700 text-slate-200"}`}>
+            <tr className={`text-left ${
+              color === "light" ? "bg-gray-50 text-gray-500" : "bg-slate-700 text-slate-200"
+            }`}>
               <th className="px-6 py-4 font-medium">ID</th>
               <th className="px-6 py-4 font-medium">Sujet</th>
               <th className="px-6 py-4 font-medium">Type</th>
@@ -237,59 +355,71 @@ export default function CardTable({ color }) {
               <th className="px-6 py-4 font-medium">Statut</th>
               <th className="px-6 py-4 font-medium">Date</th>
               <th className="px-6 py-4 font-medium">Description</th>
-              <th className="px-6 py-4 font-medium">Actions</th> {/* Nouvelle colonne Actions */}
+              <th className="px-6 py-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredItems.map((item) => (
-              <tr key={item.id} className={`border-t ${color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"} transition-colors`}>
+              <tr 
+                key={item.id} 
+                className={`border-t ${
+                  color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"
+                } transition-colors`}
+              >
                 <td className="px-6 py-4">{item.id}</td>
                 <td className="px-6 py-4">{item.subject}</td>
                 <td className="px-6 py-4">{item.type}</td>
                 <td className="px-6 py-4 font-semibold text-red-600">{item.urgency}</td>
                 <td className="px-6 py-4">
-                  <span
-                    style={{
-                      ...badgeStyle,
-                      backgroundColor: item.status === "En attente" ? "#e6fffa" : "#ffe6e6",
-                      color: item.status === "En attente" ? "#047857" : "#d32f2f",
-                    }}
-                  >
+                  <span style={badgeStyle(item.status)}>
                     {item.status}
                   </span>
                 </td>
                 <td className="px-6 py-4">{item.date}</td>
-                <td className={`px-6 py-4 truncate max-w-[300px] ${color === "light" ? "text-gray-600" : "text-slate-300"}`}>
+                <td className={`px-6 py-4 truncate max-w-[300px] ${
+                  color === "light" ? "text-gray-600" : "text-slate-300"
+                }`}>
                   {item.description}
                 </td>
                 <td className="px-6 py-4">
-  <div className="flex">
-    <button
-      onClick={() => alert(`Modifier ticket ID: ${item.id}`)} // À remplacer par ta fonction de modification
-      className="gp-edit-button mr-4" // Ajout de margin-right
-    >
-      🖊 
-    </button>
-    <button
-      onClick={() => handleDelete(item.id)}
-      className="gp-delete-button"
-    >
-      🗑 
-    </button>
-  </div>
-</td>
+                  <div className="flex">
+                    <button
+                      onClick={() => {
+                        setEditingTicket(item);
+                        setEditModalOuvert(true);
+                      }}
+                      className="gp-action-icon gp-edit mr-2"
+                      title="Modifier"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTicketToDelete(item.id);
+                        setDeleteModalOuvert(true);
+                      }}
+                      className="gp-action-icon gp-delete"
+                      title="Supprimer"
+                    >
+                      <FaTrash size={16} />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
+      {/* Modal Création */}
       {modalOuvert && (
         <div className="gp-modal-overlay">
           <div className="gp-modal-container">
             <div className="gp-modal-header">
               <h2 className="text-xl font-bold">Créer un ticket</h2>
-              <button onClick={handleModalCancel}><X size={24} /></button>
+              <button onClick={() => setModalOuvert(false)}>
+                <X size={24} />
+              </button>
             </div>
 
             <div>
@@ -314,8 +444,9 @@ export default function CardTable({ color }) {
                   className="gp-form-input"
                 >
                   <option value="">-- Sélectionner --</option>
-                  <option value="Technique">Technique</option>
-                  <option value="Fonctionnel">Fonctionnel</option>
+                  <option value="Informatique">Informatique</option>
+                  <option value="Ressources humaines">Ressources humaines</option>
+                  <option value="Comptabilité">Comptabilité</option>
                 </select>
                 {errors.type && <p className="text-red-500 text-sm">{errors.type}</p>}
               </div>
@@ -347,9 +478,175 @@ export default function CardTable({ color }) {
                 {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
               </div>
 
-              <div className="flex justify-end mt-4">
-                <button onClick={handleModalCancel} className="gp-btn gp-btn-cancel">Annuler</button>
-                <button onClick={handleModalSubmit} className="gp-btn gp-btn-save">Ajouter</button>
+              <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
+  <button 
+    type="button" // Ajoutez ceci
+    onClick={() => setModalOuvert(false)} 
+    className="gp-btn gp-btn-cancel"
+  >
+    Annuler
+  </button>
+  <button 
+    type="button" // Ajoutez ceci
+    onClick={handleCreateSubmit} 
+    className="gp-btn gp-btn-save"
+  >
+    Créer
+  </button>
+</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Édition */}
+      {editModalOuvert && editingTicket && (
+    <div className="gp-modal-overlay">
+      <div className="gp-modal-container">
+        <div className="gp-modal-header">
+          <h2 className="text-xl font-bold">Modifier le ticket</h2>
+          <button onClick={() => setEditModalOuvert(false)}>
+            <X size={24} />
+          </button>
+        </div>
+
+        <div>
+          <div className="gp-form-group">
+            <label className="block font-semibold mb-1">ID</label>
+            <div className="gp-readonly-text">{editingTicket.id}</div>
+          </div>
+
+          <div className="gp-form-group">
+            <label className="block font-semibold mb-1">Sujet</label>
+            <input
+              type="text"
+              name="subject"
+              value={editingTicket.subject}
+              onChange={handleEditChange}
+              className="gp-form-input"
+            />
+            {editErrors.subject && <p className="text-red-500 text-sm">{editErrors.subject}</p>}
+          </div>
+
+          <div className="gp-form-group">
+            <label className="block font-semibold mb-1">Type</label>
+            <select
+              name="type"
+              value={editingTicket.type}
+              onChange={handleEditChange}
+              className="gp-form-input"
+            >
+              <option value="">-- Sélectionner --</option>
+              <option value="Informatique">Informatique</option>
+              <option value="Ressources humaines">Ressources humaines</option>
+              <option value="Comptabilité">Comptabilité</option>
+            </select>
+            {editErrors.type && <p className="text-red-500 text-sm">{editErrors.type}</p>}
+          </div>
+
+          <div className="gp-form-group">
+            <label className="block font-semibold mb-1">Urgence</label>
+            <select
+              name="urgency"
+              value={editingTicket.urgency}
+              className="gp-form-input gp-disabled-input"
+              disabled
+            >
+              <option value="Urgent">Urgent</option>
+              <option value="Normal">Normal</option>
+            </select>
+          </div>
+
+          <div className="gp-form-group">
+            <label className="block font-semibold mb-1">Statut</label>
+            <select
+              name="status"
+              value={editingTicket.status}
+              onChange={handleEditChange}
+              className="gp-form-input"
+            >
+              <option value="Ouvert">Ouvert</option>
+              <option value="En cours">En cours</option>
+              <option value="Fermé">Fermé</option>
+            </select>
+          </div>
+
+          <div className="gp-form-group">
+            <label className="block font-semibold mb-1">Description</label>
+            <textarea
+              name="description"
+              value={editingTicket.description}
+              onChange={handleEditChange}
+              rows={4}
+              className="gp-form-input"
+            />
+            {editErrors.description && <p className="text-red-500 text-sm">{editErrors.description}</p>}
+          </div>
+
+          <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
+            <button 
+              onClick={() => setEditModalOuvert(false)} 
+              className="gp-btn gp-btn-cancel"
+            >
+              Annuler
+            </button>
+            <button 
+              onClick={handleEditSubmit}
+              className="gp-btn gp-btn-save"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+      {/* Modal Suppression */}
+      {deleteModalOuvert && (
+        <div className="gp-modal-overlay">
+          <div className="gp-modal-container">
+            <div className="gp-modal-header">
+              <h2 className="text-xl font-bold">Confirmer la suppression</h2>
+              <button onClick={() => setDeleteModalOuvert(false)}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="gp-delete-modal-content">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-16 w-16 text-red-600 mx-auto mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              
+              <p className="text-lg font-medium">
+                Êtes-vous sûr de vouloir supprimer ce ticket ?
+              </p>
+           
+
+              <div className="gp-delete-buttons">
+                <button
+                  onClick={() => setDeleteModalOuvert(false)}
+                  className="gp-btn gp-btn-cancel"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="gp-btn gp-btn-danger"
+                >
+                  Supprimer
+                </button>
               </div>
             </div>
           </div>
@@ -359,10 +656,10 @@ export default function CardTable({ color }) {
   );
 }
 
-CardTable.defaultProps = {
+TicketTable.defaultProps = {
   color: "light",
 };
 
-CardTable.propTypes = {
+TicketTable.propTypes = {
   color: PropTypes.oneOf(["light", "dark"]),
 };
