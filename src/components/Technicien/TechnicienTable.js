@@ -1,39 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { FaFilter, FaEdit, FaTrash } from "react-icons/fa";
 import { X } from "lucide-react";
 
 export default function TechnicienTable({ color }) {
-  const [techniciens, setTechniciens] = useState([
-    {
-      id: 1,
-      nom: "Dubois",
-      prenom: "Marc",
-      specialite: "Informatique",
-      password: "secret123",
-    },
-    {
-      id: 2,
-      nom: "Leroy",
-      prenom: "Julie",
-      specialite: "Réseaux",
-      password: "reseau456",
-    },
-    {
-      id: 3,
-      nom: "Moreau",
-      prenom: "Luc",
-      specialite: "Électricité",
-      password: "elec789",
-    },
-    {
-      id: 4,
-      nom: "Roux",
-      prenom: "Émilie",
-      specialite: "Maintenance",
-      password: "maint012",
-    },
-  ]);
+  const [techniciens, setTechniciens] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchTechniciens = async () => {
+      try {
+        const response = await fetch('/allusers');
+        if (!response.ok) throw new Error('Erreur réseau');
+        
+        const data = await response.json();
+        
+        // Filtrage des utilisateurs avec le rôle 'technicien'
+        const techs = data.filter(user => user.role === 'technicien').map(tech => ({
+          id: tech._id,
+          nom: tech.nom,
+          prenom: tech.prenom,
+          email: tech.email, // Ajout de l'email
+          specialite: tech.specialite,
+          password: ''
+        }));
+        
+        setTechniciens(techs);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        console.error("Erreur de chargement:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTechniciens();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSpecialite, setFilterSpecialite] = useState("");
@@ -43,8 +46,11 @@ export default function TechnicienTable({ color }) {
   const [newTechnicien, setNewTechnicien] = useState({
     nom: "",
     prenom: "",
+    email: "",
+    telephone: "",
+    role: "technicien", // Forcer le rôle ici
+    password: "", // À garder si le backend génère le mot de passe
     specialite: "",
-    password: "",
   });
   const [errors, setErrors] = useState({});
 
@@ -67,9 +73,10 @@ export default function TechnicienTable({ color }) {
     const errors = {};
     if (!technicien.nom.trim()) errors.nom = "Le nom est requis";
     if (!technicien.prenom.trim()) errors.prenom = "Le prénom est requis";
+    if (!technicien.email.trim()) errors.email = "L'email est requis";
+    if (!technicien.telephone.trim()) errors.telephone = "Le téléphone est requis";
     if (!technicien.specialite) errors.specialite = "La spécialité est requise";
-    if (!technicien.password.trim()) errors.password = "Le mot de passe est requis";
-    return errors;
+    return errors; // Retirer la validation du password
   };
 
   const validateEditForm = (technicien) => {
@@ -77,39 +84,119 @@ export default function TechnicienTable({ color }) {
     if (!technicien.nom.trim()) errors.nom = "Le nom est requis";
     if (!technicien.prenom.trim()) errors.prenom = "Le prénom est requis";
     if (!technicien.specialite) errors.specialite = "La spécialité est requise";
+    if (!technicien.email.trim()) errors.email = "L'email est requis"; // Nouvelle validation
     return errors;
   };
 
-  const handleCreateSubmit = () => {
-    const errors = validateForm(newTechnicien);
-    if (Object.keys(errors).length > 0) {
-      setErrors(errors);
-    } else {
-      const newItem = {
-        ...newTechnicien,
-        id: techniciens.length + 1,
-      };
-      setTechniciens([...techniciens, newItem]);
+  const handleCreateSubmit = async () => {
+    const validationErrors = validateForm(newTechnicien);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+  
+    try {
+      const response = await fetch('/adduser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newTechnicien,
+          tel: newTechnicien.telephone, // Correction ici
+          role: 'technicien',
+          password: undefined,
+          telephone: undefined // Supprimer l'ancien champ
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de l\'ajout');
+      }
+  
+      const createdTechnicien = await response.json();
+      
+      setTechniciens([...techniciens, {
+        id: createdTechnicien._id,
+        nom: createdTechnicien.nom,
+        prenom: createdTechnicien.prenom,
+        specialite: createdTechnicien.specialite,
+      }]);
+  
       setModalOuvert(false);
-      setNewTechnicien({ nom: "", prenom: "", specialite: "", password: "" });
+      setNewTechnicien({
+        nom: "",
+        prenom: "",
+        email: "",
+        telephone: "",
+        role: "",
+        password: "",
+        specialite: "", // Ajouté
+      });
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(`verifier bien les champs`);
     }
   };
 
-  const handleEditSubmit = () => {
+  const handleEditSubmit = async () => {
     const errors = validateEditForm(editingTechnicien);
     if (Object.keys(errors).length > 0) {
       setEditErrors(errors);
-    } else {
+      return;
+    }
+  
+    try {
+      const response = await fetch(`/updateuser/${editingTechnicien.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nom: editingTechnicien.nom,
+          prenom: editingTechnicien.prenom,
+          specialite: editingTechnicien.specialite,
+          password: editingTechnicien.password
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la mise à jour');
+      }
+  
+      const updatedTechnicien = await response.json();
+      
       setTechniciens(techniciens.map(tech => 
-        tech.id === editingTechnicien.id ? editingTechnicien : tech
+        tech.id === updatedTechnicien._id ? {
+          ...tech,
+          ...updatedTechnicien
+        } : tech
       ));
+      
       setEditModalOuvert(false);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setEditErrors({ general: error.message });
     }
   };
 
-  const confirmDelete = () => {
-    setTechniciens(techniciens.filter(tech => tech.id !== technicienIdToDelete));
-    setDeleteModalOuvert(false);
+  const confirmDelete = async () => {
+    try {
+      const response = await fetch(`/deleteuser/${technicienIdToDelete}`, {
+        method: 'DELETE',
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la suppression');
+      }
+  
+      setTechniciens(techniciens.filter(tech => tech.id !== technicienIdToDelete));
+      setDeleteModalOuvert(false);
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(error.message);
+    }
   };
 
   const filteredTechniciens = techniciens.filter(tech => {
@@ -152,6 +239,12 @@ export default function TechnicienTable({ color }) {
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+           .gp-delete-buttons {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          margin-top: 2rem;
         }
         .gp-edit {
           background-color: #e0f2fe;
@@ -283,41 +376,41 @@ export default function TechnicienTable({ color }) {
             onClick={() => setModalOuvert(true)}
           >
             <span>+</span>
-            <span>Nouveau Technicien</span>
+            <span>Ajouter</span>
           </button>
         </div>
       </div>
 
       <div className="overflow-x-auto px-6 pt-4 pb-14">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className={`text-left ${
-              color === "light" ? "bg-gray-50 text-gray-500" : "bg-slate-700 text-slate-200"
-            }`}>
-              <th className="px-6 py-4 font-medium">ID</th>
-              <th className="px-6 py-4 font-medium">Nom</th>
-              <th className="px-6 py-4 font-medium">Prénom</th>
-              <th className="px-6 py-4 font-medium">Spécialité</th>
-              <th className="px-6 py-4 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTechniciens.map((tech) => (
-              <tr 
-                key={tech.id} 
-                className={`border-t ${
-                  color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"
-                } transition-colors`}
-              >
-                <td className="px-6 py-4">{tech.id}</td>
-                <td className="px-6 py-4">{tech.nom}</td>
-                <td className="px-6 py-4">{tech.prenom}</td>
-                <td className="px-6 py-4">
-                  <span style={specialiteStyle(tech.specialite)}>
-                    {tech.specialite}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
+  <table className="w-full border-collapse">
+    <thead>
+      <tr className={`text-left ${
+        color === "light" ? "bg-gray-50 text-gray-500" : "bg-slate-700 text-slate-200"
+      }`}>
+        <th className="px-4 py-4 font-medium w-[10%] min-w-[80px]">ID</th>
+        <th className="px-4 py-4 font-medium w-[25%] min-w-[150px]">Nom</th>
+        <th className="px-4 py-4 font-medium w-[25%] min-w-[150px]">Prénom</th>
+        <th className="px-4 py-4 font-medium w-[25%] min-w-[180px]">Spécialité</th>
+        <th className="px-4 py-4 font-medium w-[15%] min-w-[120px]">Actions</th>
+      </tr>
+    </thead>
+<tbody>
+  {filteredTechniciens.map((tech) => (
+    <tr 
+      key={tech.id} 
+      className={`border-t ${
+        color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"
+      } transition-colors`}
+    >
+      <td className="px-6 py-4 whitespace-nowrap">{tech.id}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{tech.nom}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{tech.prenom}</td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span style={specialiteStyle(tech.specialite)}>
+          {tech.specialite}
+        </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex">
                     <button
                       onClick={() => {
@@ -384,6 +477,36 @@ export default function TechnicienTable({ color }) {
               </div>
 
               <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={newTechnicien.email}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                />
+                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              </div>
+              <div className="gp-form-group">
+  <label className="block font-semibold mb-1">Téléphone *</label>
+  <input
+    type="tel"
+    name="telephone"
+    value={newTechnicien.telephone}
+    onChange={handleChange}
+    className="gp-form-input"
+  />
+  {errors.telephone && <p className="text-red-500 text-sm">{errors.telephone}</p>}
+</div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Rôle</label>
+                <div className="gp-form-input bg-gray-100 cursor-not-allowed">
+                  Technicien
+                  <input type="hidden" name="role" value="technicien" />
+                </div>
+              </div>
+
+              <div className="gp-form-group">
                 <label className="block font-semibold mb-1">Spécialité *</label>
                 <select
                   name="specialite"
@@ -400,19 +523,7 @@ export default function TechnicienTable({ color }) {
                 {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
               </div>
 
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Mot de passe *</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={newTechnicien.password}
-                  onChange={handleChange}
-                  className="gp-form-input"
-                />
-                {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-              </div>
-
-              <div className="flex justify-end mt-4 gap-2">
+              <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
                 <button 
                   onClick={() => setModalOuvert(false)} 
                   className="gp-btn gp-btn-cancel"
@@ -423,7 +534,7 @@ export default function TechnicienTable({ color }) {
                   onClick={handleCreateSubmit} 
                   className="gp-btn gp-btn-save"
                 >
-                  Enregistrer
+                  Ajouter
                 </button>
               </div>
             </div>
@@ -432,92 +543,102 @@ export default function TechnicienTable({ color }) {
       )}
 
       {/* Modal Modification */}
-      {editModalOuvert && editingTechnicien && (
-        <div className="gp-modal-overlay">
-          <div className="gp-modal-container">
-            <div className="gp-modal-header">
-              <h2 className="text-xl font-bold">Modifier Technicien</h2>
-              <button onClick={() => setEditModalOuvert(false)}>
-                <X size={24} />
-              </button>
-            </div>
+   {/* Modal Modification */}
+{editModalOuvert && editingTechnicien && (
+  <div className="gp-modal-overlay">
+    <div className="gp-modal-container">
+      <div className="gp-modal-header">
+        <h2 className="text-xl font-bold">Modifier Technicien</h2>
+        <button onClick={() => setEditModalOuvert(false)}>
+          <X size={24} />
+        </button>
+      </div>
 
-            <div>
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">ID</label>
-                <div className="gp-readonly-text">{editingTechnicien.id}</div>
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Nom *</label>
-                <input
-                  type="text"
-                  name="nom"
-                  value={editingTechnicien.nom}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                />
-                {editErrors.nom && <p className="text-red-500 text-sm">{editErrors.nom}</p>}
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Prénom *</label>
-                <input
-                  type="text"
-                  name="prenom"
-                  value={editingTechnicien.prenom}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                />
-                {editErrors.prenom && <p className="text-red-500 text-sm">{editErrors.prenom}</p>}
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Spécialité *</label>
-                <select
-                  name="specialite"
-                  value={editingTechnicien.specialite}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                >
-                  <option value="Informatique">Informatique</option>
-                  <option value="Réseaux">Réseaux</option>
-                  <option value="Électricité">Électricité</option>
-                  <option value="Maintenance">Maintenance</option>
-                </select>
-                {editErrors.specialite && <p className="text-red-500 text-sm">{editErrors.specialite}</p>}
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Nouveau mot de passe</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={editingTechnicien.password || ''}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                  placeholder="Laisser vide pour ne pas modifier"
-                />
-              </div>
-
-              <div className="flex justify-end mt-4 gap-2">
-                <button 
-                  onClick={() => setEditModalOuvert(false)} 
-                  className="gp-btn gp-btn-cancel"
-                >
-                  Annuler
-                </button>
-                <button 
-                  onClick={handleEditSubmit} 
-                  className="gp-btn gp-btn-save"
-                >
-                  Sauvegarder
-                </button>
-              </div>
-            </div>
-          </div>
+      <div>
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">ID</label>
+          <div className="gp-readonly-text">{editingTechnicien.id}</div>
         </div>
-      )}
+
+        {/* Nouveau champ Nom */}
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Nom *</label>
+          <input
+            type="text"
+            name="nom"
+            value={editingTechnicien.nom}
+            onChange={handleEditChange}
+            className="gp-form-input"
+          />
+          {editErrors.nom && <p className="text-red-500 text-sm">{editErrors.nom}</p>}
+        </div>
+
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Prénom *</label>
+          <input
+            type="text"
+            name="prenom"
+            value={editingTechnicien.prenom}
+            onChange={handleEditChange}
+            className="gp-form-input"
+          />
+          {editErrors.prenom && <p className="text-red-500 text-sm">{editErrors.prenom}</p>}
+        </div>
+
+        {/* Champ Email ajouté */}
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Email *</label>
+          <input
+            type="email"
+            name="email"
+            value={editingTechnicien.email}
+            onChange={handleEditChange}
+            className="gp-form-input"
+          />
+          {editErrors.email && <p className="text-red-500 text-sm">{editErrors.email}</p>}
+        </div>
+
+        {/* Spécialité en lecture seule */}
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Spécialité</label>
+          <input
+            type="text"
+            value={editingTechnicien.specialite}
+            className="gp-form-input bg-gray-100 cursor-not-allowed"
+            readOnly
+          />
+        </div>
+
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Nouveau mot de passe</label>
+          <input
+            type="password"
+            name="password"
+            value={editingTechnicien.password || ''}
+            onChange={handleEditChange}
+            className="gp-form-input"
+            placeholder="nouveau mot de passe"
+          />
+        </div>
+
+        <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
+          <button 
+            onClick={() => setEditModalOuvert(false)} 
+            className="gp-btn gp-btn-cancel"
+          >
+            Annuler
+          </button>
+          <button 
+            onClick={handleEditSubmit} 
+            className="gp-btn gp-btn-save"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Modal Suppression */}
       {deleteModalOuvert && (
@@ -549,20 +670,20 @@ export default function TechnicienTable({ color }) {
               <p className="text-lg font-medium mb-4">
                 Êtes-vous sûr de vouloir supprimer ce technicien ?
               </p>
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={() => setDeleteModalOuvert(false)}
-                  className="gp-btn gp-btn-cancel"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="gp-btn gp-btn-danger"
-                >
-                  Confirmer
-                </button>
-              </div>
+              <div className="gp-delete-buttons">
+          <button
+            onClick={() => setDeleteModalOuvert(false)}
+            className="gp-btn gp-btn-cancel"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="gp-btn gp-btn-danger"
+          >
+            Supprimer
+          </button>
+        </div>
             </div>
           </div>
         </div>

@@ -146,4 +146,41 @@ module.exports.updateUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const jwt = require("jsonwebtoken")
+const createToken=(id)=>{
+  return jwt.sign({id},'net stbticket 2025',{expiresIn : '1m'})
+}
+module.exports.login = async (req,res)=>{
+  try {
+      const { email , password} = req.body
+      
+      const user = await userModal.login(email,password)
+      const connecte = true
+      await userModal.findByIdAndUpdate(user._id,{
+          $set: {connecte}
+      })
+      const token = createToken(user._id)
+      res.cookie('jwt_token',token,{httpOnly:true},{maxAge:'60*1000'})
+      
+      res.status(200).json({message :"connected",user : user})
+  } catch (error) {
+      res.status(500).json({message:error.message} )
+  }
+}
+
+module.exports.logout = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const connecte = false;
+    await userModal.findByIdAndUpdate(id, { 
+      $set: { connecte }
+    });
+    res.cookie("jwt_token","",{httpOnly:false,maxAge:1})
+    res.status(200).json("User successfully logged out");
+  } catch (error) {
+    res.status(500).json({message:error.message});
+  }
+}
+
+
 

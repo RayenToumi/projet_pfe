@@ -1,10 +1,10 @@
 import React from "react";
-import CardDepartment from "components/departement/CardDepartment";
+import Cardtech from "components/Technicien/TechnicienTable";
 export default function CardTech() {
     return (
         <>
         <div>
-            <CardDepartment/>
+            <Cardtech/>
         </div>
         </>
     );
