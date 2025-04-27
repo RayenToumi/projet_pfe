@@ -1,11 +1,86 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useHistory } from "react-router-dom";
 import { FaGoogle } from "react-icons/fa";
-
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const history = useHistory();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      // Étape 1 : Authentification
+      const loginResponse = await fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+      });
+
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok) {
+        throw new Error(loginData.message || "Échec de la connexion");
+      }
+
+      // Étape 2 : Récupération des utilisateurs
+      const allUsersResponse = await fetch('/allusers', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      const allUsersData = await allUsersResponse.json();
+
+      if (!allUsersResponse.ok) {
+        throw new Error(allUsersData.message || "Erreur lors de la récupération des utilisateurs");
+      }
+
+      // Étape 3 : Trouver l'utilisateur connecté
+      const connectedUser = allUsersData.find((user) => user.email === email);
+
+      if (!connectedUser) {
+        throw new Error("Utilisateur non trouvé");
+      }
+
+      const role = connectedUser.role;
+
+      // Étape 4 : Redirection selon le rôle
+      switch (role) {
+        case 'admin':
+          history.push('/admin');
+          break;
+        case 'technicien':
+          history.push('/tech');
+          break;
+        case 'utilisateur':
+          history.push('/homepage');
+          break;
+        case 'manager':
+          history.push('/manager');
+          break;
+        default:
+          setError("Rôle inconnu. Contactez l'administrateur.");
+          return;
+      }
+
+    } catch (error) {
+      setError(error.message);
+      alert(`Erreur : ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ 
@@ -41,16 +116,41 @@ export default function LoginPage() {
           }} 
         />
 
-        <div style={{ padding: "32px", display: "flex", flexDirection: "column", justifyContent: "center", background: "white" }}>
+        <form onSubmit={handleSubmit} style={{ 
+          padding: "32px", 
+          display: "flex", 
+          flexDirection: "column", 
+          justifyContent: "center", 
+          background: "white" 
+        }}>
           <h2 style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937", textAlign: "center" }}>Log In</h2>
+          
+          {error && <div style={{ color: "red", marginBottom: "12px" }}>{error}</div>}
+
           <div style={{ marginTop: "16px" }}>
             <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Email</label>
-            <input type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px", marginTop: "4px" }} />
+            <input 
+              type="email" 
+              placeholder="Enter your email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required
+              style={{ width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px", marginTop: "4px" }} 
+            />
           </div>
+          
           <div style={{ marginTop: "12px" }}>
             <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Password</label>
-            <input type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px", marginTop: "4px" }} />
+            <input 
+              type="password" 
+              placeholder="Enter your password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required
+              style={{ width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px", marginTop: "4px" }} 
+            />
           </div>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
             <div style={{ display: "flex", alignItems: "center" }}>
               <input type="checkbox" id="remember" />
@@ -58,23 +158,66 @@ export default function LoginPage() {
             </div>
             <a href="#" style={{ fontSize: "14px", color: "#3b82f6", textDecoration: "none" }}>Forgot password?</a>
           </div>
-          <button style={{ width: "100%", background: "#3b82f6", color: "white", padding: "10px", marginTop: "16px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}>LOG IN</button>
+
+          <button 
+            type="submit"
+            disabled={loading}
+            style={{ 
+              width: "100%", 
+              background: loading ? "#9ca3af" : "#3b82f6", 
+              color: "white", 
+              padding: "10px", 
+              marginTop: "16px", 
+              borderRadius: "6px", 
+              fontWeight: "bold", 
+              cursor: loading ? "not-allowed" : "pointer" 
+            }}
+          >
+            {loading ? "Chargement..." : "LOG IN"}
+          </button>
+
           <div style={{ display: "flex", alignItems: "center", margin: "16px 0" }}>
             <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
             <span style={{ margin: "0 8px", fontSize: "14px", color: "#6b7280" }}>OR</span>
             <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
           </div>
-          <button style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", border: "1px solid #d1d5db", padding: "10px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", background: "white" }}>
+
+          <button 
+            type="button"
+            style={{ 
+              width: "100%", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center", 
+              gap: "8px", 
+              border: "1px solid #d1d5db", 
+              padding: "10px", 
+              borderRadius: "6px", 
+              fontWeight: "bold", 
+              cursor: "pointer", 
+              background: "white" 
+            }}
+          >
             <FaGoogle style={{ color: "#3b82f6" }} /> Continue with Google
           </button>
+
           <p style={{ fontSize: "14px", textAlign: "center", color: "#6b7280", marginTop: "12px" }}>
             Don't have an account? <a href="Register" style={{ color: "#3b82f6", textDecoration: "none" }}>Sign Up</a>
-         
           </p>
-        </div>
+        </form>
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundImage: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrxCZS8RUx52KhkLFeYR19uXX3GnbF9-sH75brySGs70DJ1EINGwkFnr6K5LqopCqGHTVK79x_gscCHE_cR1wmpIADhJXkTZIJhDz_VtYuxwekNibQUVl6VKNuq3uOlTsfnFW2F_ZVXsm2m7DU2IGJREbwsM16cR45D3-4iI5AwRArtjCnR713SvfIJpg/s1934/stb%20%20thebanker.jpg')", backgroundSize: "cover", backgroundPosition: "center", color: "white", padding: "32px", textAlign: "center" }}>
-          
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          backgroundImage: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjrxCZS8RUx52KhkLFeYR19uXX3GnbF9-sH75brySGs70DJ1EINGwkFnr6K5LqopCqGHTVK79x_gscCHE_cR1wmpIADhJXkTZIJhDz_VtYuxwekNibQUVl6VKNuq3uOlTsfnFW2F_ZVXsm2m7DU2IGJREbwsM16cR45D3-4iI5AwRArtjCnR713SvfIJpg/s1934/stb%20%20thebanker.jpg')", 
+          backgroundSize: "cover", 
+          backgroundPosition: "center", 
+          color: "white", 
+          padding: "32px", 
+          textAlign: "center" 
+        }}>
         </div>
       </div>
     </div>
