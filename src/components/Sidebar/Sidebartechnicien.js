@@ -1,23 +1,18 @@
+/*eslint-disable*/
 import React from "react";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTicket, faSignOutAlt } from '@fortawesome/free-solid-svg-icons'; // Ajout de l'icône de déconnexion
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';  // Import de FontAwesomeIcon
+import { faTicket } from '@fortawesome/free-solid-svg-icons';  // Import de l'icône du ticket
 
 import NotificationDropdown from "components/Dropdowns/NotificationDropdown.js";
 import UserDropdown from "components/Dropdowns/UserDropdown.js";
 
-export default function Sidebar() {
+export default function Sidebartechnicien() {
   const [collapseShow, setCollapseShow] = React.useState("hidden");
-
-  // Fonction de déconnexion (à implémenter selon vos besoins)
-  const handleLogout = () => {
-    console.log("Déconnexion effectuée");
-    // Ajouter ici la logique de déconnexion (nettoyage du stockage, redirection, etc.)
-  };
 
   return (
     <>
-     <nav className="md:left-0 md:block md:fixed md:top-0 md:bottom-0 md:overflow-y-auto md:flex-row md:flex-nowrap md:overflow-hidden shadow-xl bg-white flex flex-wrap items-center justify-between relative md:w-64 z-10 py-4 px-6">
+      <nav className="md:left-0 md:block md:fixed md:top-0 md:bottom-0 md:overflow-y-auto md:flex-row md:flex-nowrap md:overflow-hidden shadow-xl bg-white flex flex-wrap items-center justify-between relative md:w-64 z-10 py-4 px-6">
         <div className="md:flex-col md:items-stretch md:min-h-full md:flex-nowrap px-0 flex flex-wrap items-center justify-between w-full mx-auto">
           {/* Toggler */}
           <button
@@ -96,47 +91,27 @@ export default function Sidebar() {
             <hr className="my-4 md:min-w-full" />
             {/* Heading */}
             <h6 className="md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline">
-              Admin Layout Pages
+              Technicien Layout Pages
             </h6>
             {/* Navigation */}
 
             <ul className="md:flex-col md:min-w-full flex flex-col list-none">
-              <li className="items-center">
-                <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/dashboard") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
-                  to="/admin/dashboard"
-                >
-                  <i
-                    className={
-                      "fas fa-tachometer-alt mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/dashboard") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  Stats
-                </Link>
-              </li>
+       
 
               <li className="items-center">
                 <Link
                   className={
                     "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/settings") !== -1
+                    (window.location.href.indexOf("/technicien/settings") !== -1
                       ? "text-lightBlue-500 hover:text-lightBlue-600"
                       : "text-blueGray-700 hover:text-blueGray-500")
                   }
-                  to="/admin/settings"
+                  to="/technicien/settings"
                 >
                   <i
                     className={
                       "fas fa-tools mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/settings") !== -1
+                      (window.location.href.indexOf("/technicien/settings") !== -1
                         ? "opacity-75"
                         : "text-blueGray-300")
                     }
@@ -145,43 +120,22 @@ export default function Sidebar() {
                 </Link>
               </li>
 
-              <li className="items-center">
-                <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/tables") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
-                  to="/admin/tables"
-                >
-                  <i
-                    className={
-                      "fas fa-table mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/tables") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  Tables
-                </Link>
-              </li>
 
               <li className="items-center">
                 <Link
                   className={
                     "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/ticket") !== -1
+                    (window.location.href.indexOf("/technicien/ticket") !== -1
                       ? "text-lightBlue-500 hover:text-lightBlue-600"
                       : "text-blueGray-700 hover:text-blueGray-500")
                   }
-                  to="/admin/ticket"
+                  to="/technicien/ticket"
                 >
                   <FontAwesomeIcon
                     icon={faTicket}
                     className={
                       "mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/ticket") !== -1
+                      (window.location.href.indexOf("/technicien/ticket") !== -1
                         ? "opacity-75"
                         : "text-blueGray-300")
                     }
@@ -194,16 +148,16 @@ export default function Sidebar() {
                 <Link
                   className={
                     "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/calender") !== -1
+                    (window.location.href.indexOf("/technicien/calender") !== -1
                       ? "text-lightBlue-500 hover:text-lightBlue-600"
                       : "text-blueGray-700 hover:text-blueGray-500")
                   }
-                  to="/admin/calender"
+                  to="/technicien/calender"
                 >
                   <i
                     className={
                       "fas fa-calendar-week mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/calender") !== -1
+                      (window.location.href.indexOf("/technicien/calender") !== -1
                         ? "opacity-75"
                         : "text-blueGray-300")
                     }
@@ -211,30 +165,6 @@ export default function Sidebar() {
                   time sheet
                 </Link>
               </li>
-
-              <li className="items-center">
-                <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/cardtech") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
-                  to="/admin/cardtech"
-                >
-                  <i
-                    className={
-                      "fas fa-user-tie mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/cardtech") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  technicien
-                </Link>
-              </li>
-             
-              
             </ul>
           </div>
         </div>

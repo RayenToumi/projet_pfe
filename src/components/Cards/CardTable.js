@@ -196,11 +196,9 @@ export default function CardTable({ color }) {
     fontWeight: "500",
     backgroundColor:
       role === "admin" ? "#dcfce7" :
-      role === "manager" ? "#ffedd5" :
       role === "technicien" ? "#fee2e2" : "#f3f4f6",
     color:
       role === "admin" ? "#16a34a" :
-      role === "manager" ? "#ea580c" :
       role === "technicien" ? "#dc2626" : "#374151",
   });
 
@@ -363,7 +361,6 @@ export default function CardTable({ color }) {
             <option value="">Tous les rôles</option>
             <option value="admin">Admin</option>
             <option value="utilisateur">Utilisateur</option>
-            <option value="manager">Manager</option>
             <option value="technicien">Technicien</option>
           </select>
 
@@ -512,7 +509,6 @@ export default function CardTable({ color }) {
                   <option value="">-- Sélectionner --</option>
                   <option value="admin">Admin</option>
                   <option value="utilisateur">Utilisateur</option>
-                  <option value="manager">Manager</option>
                   <option value="technicien">Technicien</option>
                 </select>
                 {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
@@ -637,9 +633,9 @@ export default function CardTable({ color }) {
                 >
                   <option value="admin">Admin</option>
                   <option value="utilisateur">Utilisateur</option>
-                  <option value="manager">Manager</option>
                   <option value="technicien">Technicien</option>
                 </select>
+
               </div>
 
               <div className="flex justify-end mt-4" style={{ gap: "12px" }}>

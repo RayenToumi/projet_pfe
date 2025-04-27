@@ -162,7 +162,17 @@ module.exports.login = async (req,res)=>{
       const token = createToken(user._id)
       res.cookie('jwt_token',token,{httpOnly:true},{maxAge:'60*1000'})
       
-      res.status(200).json({message :"connected",user : user})
+      res.status(200).json({
+        message: "connected",
+        token: token,
+        user: { // Ajouter les champs nécessaires
+          _id: user._id,
+          email: user.email,
+          role: user.role,
+          nom: user.nom,
+          prenom: user.prenom
+        }
+      });
   } catch (error) {
       res.status(500).json({message:error.message} )
   }

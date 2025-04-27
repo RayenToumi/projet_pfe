@@ -15,8 +15,8 @@ import Maps from "views/admin/Maps.js";
 import Settings from "views/admin/Settings.js";
 import Tables from "views/admin/Tables.js";
 import Ticket from "views/admin/Ticket.js";
-import Calender from "views/admin/Calender";
-import CardTech from "views/admin/CardTech";
+import Calender from "views/admin/Calender.js";
+import CardTech from "views/admin/CardTech.js";
 
 export default function Admin() {
   return (

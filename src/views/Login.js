@@ -31,47 +31,23 @@ export default function LoginPage() {
         throw new Error(loginData.message || "Échec de la connexion");
       }
 
-      // Étape 2 : Récupération des utilisateurs
-      const allUsersResponse = await fetch('/allusers', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+      // Récupération du token et des données utilisateur
+      const { token, user } = loginData;
 
-      const allUsersData = await allUsersResponse.json();
+      // Sauvegarde dans le localStorage
+      localStorage.setItem('jwt_token', token);
+      localStorage.setItem('user', JSON.stringify(user));
 
-      if (!allUsersResponse.ok) {
-        throw new Error(allUsersData.message || "Erreur lors de la récupération des utilisateurs");
-      }
-
-      // Étape 3 : Trouver l'utilisateur connecté
-      const connectedUser = allUsersData.find((user) => user.email === email);
-
-      if (!connectedUser) {
-        throw new Error("Utilisateur non trouvé");
-      }
-
-      const role = connectedUser.role;
-
-      // Étape 4 : Redirection selon le rôle
-      switch (role) {
+      // Redirection selon le rôle
+      switch (user.role) {
         case 'admin':
-          history.push('/admin');
-          break;
-        case 'technicien':
-          history.push('/tech');
-          break;
-        case 'utilisateur':
           history.push('/homepage');
           break;
-        case 'manager':
-          history.push('/manager');
+        case 'technicien':
+          history.push('/homepage');
           break;
         default:
-          setError("Rôle inconnu. Contactez l'administrateur.");
-          return;
+          history.push('/homepage');
       }
 
     } catch (error) {
