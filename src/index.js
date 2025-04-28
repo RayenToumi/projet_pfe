@@ -21,6 +21,7 @@ import Utilisateur from "layouts/Utilisateur.js";
 import Landing from "views/Landing.js";
 import Profile from "views/Profile.js";
 import Index from "views/Index.js";
+import Home from "views/homepagevisiteur.js";
 import Register from "views/Register.js";
 import Login from "views/Login.js";
 import Ticket from "views/Ticket.js";
@@ -39,6 +40,7 @@ ReactDOM.render(
       <Route path="/profile" exact component={Profile} />
       <Route path="/Register" exact component={Register} />
       <Route path="/homepage" exact component={Index} />
+      <Route path="/homepagevisiteur" exact component={Home} />
       <Route path="/Ticket" exact component={Ticket} />
       <Route path="/" exact component={Login} />
       <Route path="/Test" exact component={Test} />

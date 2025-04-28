@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import IndexNavbar from "components/Navbars/IndexNavbar.js";
-import Footerr from "components/Footers/Footerr";
+
+
 
 function MyTickets() {
   const [tickets, setTickets] = useState([]);
@@ -71,14 +71,9 @@ function MyTickets() {
 
   return (
     <>
-      <IndexNavbar />
+    
       <div style={container}>
       <div style={contentWrapper}>
-          <img
-            src="/images/support-banner.jpg"
-            alt="Bannière Support"
-            style={bannerImage}
-          />
           <h1 style={title}>Espace Support Client</h1>
           <p style={subtitle}>Consultez vos tickets et suivez leur avancement</p>
 
@@ -157,7 +152,7 @@ function MyTickets() {
         </div>
       </div>
    
-      <Footerr />
+
     </>
   );
 }
@@ -188,7 +183,7 @@ const title = {
   fontSize: "2.5rem",
   textAlign: "center",
   marginBottom: "1rem",
-  marginTop: "4rem",
+  marginTop: "0.2rem",
   fontWeight: "bold",
   textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)",
   borderBottom: "3px solid #c5cae9",

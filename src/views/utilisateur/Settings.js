@@ -8,8 +8,7 @@ import CardProfile from "components/Cards/CardProfile.js";
 export default function Settings() {
   return (
     <>
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-full lg:w-8/12 px-4">
+       <div className="w-full lg:w-8/20 mx-auto mb-4">
           <CardSettings />
         </div>
         {/*
@@ -17,7 +16,7 @@ export default function Settings() {
           <CardProfile />
         </div>
         */}
-      </div>
+    
     </>
   );
 }

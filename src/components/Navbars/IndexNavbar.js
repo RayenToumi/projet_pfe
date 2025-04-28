@@ -57,7 +57,7 @@ export default function Navbar() {
       // Nettoyage et redirection
       localStorage.removeItem('user');
       localStorage.removeItem('jwt_token');
-      history.push('/login'); // Redirection vers la page de login
+      history.push('/homepagevisiteur'); // Redirection vers la page de login
   
       // Nettoyage après succès
       localStorage.removeItem('user');
