@@ -1,6 +1,26 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export default function CardSettings() {
+  const [userData, setUserData] = useState({
+    nom: "",
+    prenom: "",
+    email: "",
+    telephone: ""
+  });
+
+  useEffect(() => {
+    // Récupération des données utilisateur depuis le localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUserData({
+        nom: parsedUser.nom || "",
+        prenom: parsedUser.prenom || "",
+        email: parsedUser.email || "",
+        telephone: parsedUser.telephone || ""
+      });
+    }
+  }, []);
   return (
     <>
       <div className="relative flex flex-col min-w-0 break-words w-full max-w-[1000px] mb-6 shadow-lg rounded-lg bg-[var(--ubci-card-bg)] border border-[var(--ubci-gray-200)] overflow-hidden">
@@ -36,6 +56,7 @@ export default function CardSettings() {
                     type="text"
                     className="gp-form-input"
                     id="username"
+                    value={userData.nom}
                   />
                 </div>
               </div>
@@ -50,7 +71,9 @@ export default function CardSettings() {
                   </label>
                   <input
                     type="text"
-                    className="gp-form-input"                    id="firstName"
+                    className="gp-form-input"    
+                    value={userData.prenom}
+                   id="firstName"
                   />
                 </div>
               </div>
@@ -66,6 +89,7 @@ export default function CardSettings() {
                   <input
                     type="email"
                     className="gp-form-input"                       id="email"
+                    value={userData.email}
                   />
                 </div>
               </div>
@@ -80,7 +104,11 @@ export default function CardSettings() {
                   </label>
                   <input
                     type="text"
-                    className="gp-form-input"                       id="lastName"
+                    className="gp-form-input"                 
+                    
+                          id="lastName"
+                          value={userData.telephone}
+                  
                   />
                 </div>
               </div>
