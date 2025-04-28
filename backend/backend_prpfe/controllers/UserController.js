@@ -123,10 +123,12 @@ module.exports.updateUser = async (req, res) => {
       modifications.push(`Rôle: ${user.role} → ${role}`);
       user.role = role;
     }
-    if (password) {
+
+    // Ne mettre à jour le mot de passe que si un nouveau mot de passe est fourni
+    if (password && password !== user.password) {
       rawPassword = password;
       modifications.push(`Mot de passe: modifié`);
-      user.password = password;
+      user.password = password; // Assurez-vous de hash le mot de passe avant de l'enregistrer
     }
 
     const updatedUser = await user.save();
@@ -146,6 +148,7 @@ module.exports.updateUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 const jwt = require("jsonwebtoken")
 const createToken=(id)=>{
   return jwt.sign({id},'net stbticket 2025',{expiresIn : '1m'})
@@ -170,7 +173,9 @@ module.exports.login = async (req,res)=>{
           email: user.email,
           role: user.role,
           nom: user.nom,
-          prenom: user.prenom
+          prenom: user.prenom,
+          tel: user.tel,
+          password: user.password
         }
       });
   } catch (error) {

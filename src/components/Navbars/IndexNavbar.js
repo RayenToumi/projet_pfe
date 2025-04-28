@@ -143,7 +143,7 @@ export default function Navbar() {
     ? '/admin' 
     : user?.role === 'technicien' 
       ? '/technicien' 
-      : '/utilisateur'}
+      : '/utilisateur/settings'}
   className="flex items-center px-4 py-3 text-sm text-blue-900 hover:bg-blue-50 transition-colors duration-200"
   onClick={() => setIsOpen(false)}
 >
