@@ -62,8 +62,60 @@ module.exports.addUser = async (req, res) => {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: userAdded.email,
-      subject: 'Votre mot de passe',
-      text: `Bonjour ${userAdded.prenom},\n\nVotre compte a été créé avec succès.\nVoici votre mot de passe : ${rawPassword}\n\nMerci.`
+      subject: 'Création de votre compte STB',
+      text: `Bonjour ${userAdded.prenom},\n\nVotre compte a été créé avec succès.\nVoici votre mot de passe : ${rawPassword}\n\nMerci.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0;">
+          <div style="background-color: white; padding: 25px 20px; text-align: center; border-bottom: 2px solid #004a7c;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png" 
+                 alt="Logo STB" 
+                 style="width: 250px; height: auto; display: block; margin: 0 auto;">
+          </div>
+    
+          <div style="padding: 30px 20px;">
+            <p style="color: #333; font-size: 18px; margin-bottom: 20px;">Bonjour ${userAdded.prenom},</p>
+            
+            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #004a7c;">
+              <p style="color: #004a7c; font-weight: 600; margin: 0 0 15px 0; font-size: 16px;">
+                🎉 Votre compte STB a été créé avec succès
+              </p>
+              
+              <div style="background-color: #fff8e1; padding: 15px; border-radius: 4px; margin: 15px 0;">
+                <p style="color: #2c3e50; margin: 0;">
+                  🔑 <strong>Identifiants de connexion :</strong>
+                  <div style="margin-top: 10px;">
+                    <span style="display: inline-block; background-color: white; padding: 8px 15px; 
+                    border: 1px solid #ddd; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                      ${rawPassword}
+                    </span>
+                  </div>
+                </p>
+              </div>
+            </div>
+    
+            <div style="margin-top: 25px; padding: 20px; background-color: #fafafa; border-radius: 4px;">
+              <p style="color: #666; line-height: 1.6; margin: 0; font-size: 14px;">
+                <strong>⚠️ Sécurité du compte :</strong><br>
+                1. Ne communiquez jamais votre mot de passe<br>
+                2. Changez-le après votre première connexion<br>
+                3. Activez la double authentification
+              </p>
+            </div>
+          </div>
+    
+          <div style="background-color: #004a7c; padding: 20px; text-align: center; font-size: 12px; color: white;">
+            <p style="margin: 8px 0;">
+              <strong>Service Client STB</strong><br>
+              ✆ <a href="tel:71710000" style="color: white; text-decoration: none;">71 71 00 00</a> | 
+              ✉ <a href="mailto:contact@stb.tn" style="color: white; text-decoration: none;">contact@stb.tn</a>
+            </p>
+            <p style="margin: 8px 0; font-size: 11px;">
+              Siège social : Rue Hédi Nouira, Tunis Centre<br>
+              © ${new Date().getFullYear()} Société Tunisienne de Banque
+            </p>
+          </div>
+        </div>
+      `
     });
 
     res.status(201).json(userAdded);
@@ -138,8 +190,62 @@ module.exports.updateUser = async (req, res) => {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: updatedUser.email,
-        subject: "Mise à jour de votre compte",
+        subject: "Mise à jour de votre compte STB",
         text: `Bonjour ${updatedUser.prenom},\n\nVoici les informations de votre compte qui ont été mises à jour:\n\n${modifications.join("\n")}${rawPassword ? `\n\nNouveau mot de passe: ${rawPassword}` : ""}\n\nMerci de vérifier vos données.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0;">
+            <div style="background-color: white; padding: 30px 20px; text-align: center; border-bottom: 2px solid #004a7c;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png" 
+                   alt="Logo STB" 
+                   style="width: 300px; height: auto; display: block; margin: 0 auto;">
+            </div>
+    
+            <div style="padding: 30px 20px;">
+              <p style="color: #333; font-size: 16px; margin-bottom: 25px;">Bonjour ${updatedUser.prenom},</p>
+              
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #004a7c;">
+                <p style="color: #004a7c; font-weight: 600; margin: 0 0 12px 0; font-size: 15px;">Modifications effectuées :</p>
+                <ul style="color: #555; margin: 0; padding-left: 20px; line-height: 1.6;">
+                  ${modifications.map(modif => `<li style="margin-bottom: 8px;">${modif}</li>`).join('')}
+                </ul>
+              </div>
+    
+              ${rawPassword ? `
+              <div style="background-color: #fff8e1; padding: 18px; border-radius: 5px; margin: 25px 0; border: 1px solid #eee;">
+                <p style="color: #2c3e50; margin: 0; font-size: 14px;">
+                  🔐 <strong>Identifiants de connexion temporaires :</strong><br>
+                  <span style="font-family: 'Courier New', monospace; background-color: white; padding: 8px 15px; border: 1px solid #ddd; display: inline-block; margin-top: 10px; letter-spacing: 1px;">
+                    ${rawPassword}
+                  </span>
+                </p>
+                <p style="color: #7f8c8d; font-size: 12px; margin: 12px 0 0 0;">
+                  (Pour des raisons de sécurité, ce mot de passe doit être modifié après votre première connexion)
+                </p>
+              </div>` : ''}
+    
+              <div style="margin-top: 30px; padding: 15px; background-color: #fafafa; border-radius: 4px;">
+                <p style="color: #666; line-height: 1.6; font-size: 14px; margin: 0;">
+                  ℹ️ <strong>Conseil de sécurité :</strong><br>
+                  Ne communiquez jamais vos identifiants et vérifiez toujours l'URL <span style="color: #004a7c;">https://www.stb.com.tn</span> avant de vous connecter.
+                </p>
+              </div>
+            </div>
+    
+            <div style="background-color: #004a7c; padding: 20px; text-align: center; font-size: 12px; color: white;">
+              <p style="margin: 8px 0;">
+                <strong>STB Banque de Tunisie</strong><br>
+                Siège social : Rue Hédi Nouira, Tunis Centre
+              </p>
+              <p style="margin: 8px 0;">
+                ✆ <a href="tel:71710000" style="color: white; text-decoration: none;">71 71 00 00</a> | 
+                ✉ <a href="mailto:contact@stb.tn" style="color: white; text-decoration: none;">contact@stb.tn</a>
+              </p>
+              <p style="margin: 8px 0; font-size: 11px;">
+                © ${new Date().getFullYear()} Société Tunisienne de Banque. Tous droits réservés.
+              </p>
+            </div>
+          </div>
+        `
       });
     }
 

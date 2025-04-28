@@ -40,9 +40,9 @@ ReactDOM.render(
       <Route path="/profile" exact component={Profile} />
       <Route path="/Register" exact component={Register} />
       <Route path="/homepage" exact component={Index} />
-      <Route path="/homepagevisiteur" exact component={Home} />
+      <Route path="/" exact component={Home} />
       <Route path="/Ticket" exact component={Ticket} />
-      <Route path="/" exact component={Login} />
+      <Route path="/login" exact component={Login} />
       <Route path="/Test" exact component={Test} />
       <Route path="/MyTickets" exact component={MyTickets} />
     
