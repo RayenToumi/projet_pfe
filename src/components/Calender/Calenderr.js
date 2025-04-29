@@ -24,9 +24,9 @@ const Calender = () => {
       try {
         const response = await fetch('/alltickets');
         if (!response.ok) throw new Error('Erreur réseau');
-        
+
         const tickets = await response.json();
-        
+
         const formattedEvents = tickets.map(ticket => ({
           title: ticket.sujet,
           start: new Date(ticket.createdAt),
@@ -36,7 +36,7 @@ const Calender = () => {
           type: ticket.type,
           urgence: ticket.urgence
         }));
-        
+
         setEvents(formattedEvents);
       } catch (error) {
         console.error('Erreur:', error);
@@ -64,25 +64,32 @@ const Calender = () => {
     };
   };
 
-
   return (
-    <div style={{backgroundColor: '#fff',
-      borderRadius: '10px',
-      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-      padding: '20px',
-      marginTop: '110px' }}>
-      <h2 style={{ fontSize: '24px', color: '#2c3e50', marginBottom: '1rem' }}>📅 Calendrier des Tickets</h2>
-      <div style={{ backgroundColor: '#fff', borderRadius: '10px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', padding: '20px' }}>
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 600 }}
-          tooltipAccessor={event => `${event.title} (${event.type})`}
-          eventPropGetter={eventStyleGetter}
-        />
-      </div>
+    <div
+      className="absolute top-10 left-0 right-0"
+      style={{
+        marginLeft: '40px',
+        marginRight: '40px',
+        marginBottom: '20px', // réduit l'espace en bas
+        backgroundColor: '#fff',
+        borderRadius: '10px',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        padding: '20px',
+      }}
+    >
+      <h2 style={{ fontSize: '24px', color: '#2c3e50', marginBottom: '1rem' }}>
+        📅 Calendrier des Tickets
+      </h2>
+
+      <Calendar
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 570 }} // hauteur réduite
+        tooltipAccessor={(event) => `${event.title} (${event.type})`}
+        eventPropGetter={eventStyleGetter}
+      />
     </div>
   );
 };

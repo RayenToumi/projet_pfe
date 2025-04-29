@@ -19,7 +19,7 @@ function Index() {
             <Link to="Ticket">
           <button style={primaryButtonStyle}>Commencer maintenant</button>
             </Link>
-              <button style={secondaryButtonStyle}>Voir la vedio</button>
+              <button style={secondaryButtonStyle}>Voir la vidéo</button>
             </div>
           </div>
           <img

@@ -1,18 +1,16 @@
-/*eslint-disable*/
 import React from "react";
 import { Link } from "react-router-dom";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';  // Import de FontAwesomeIcon
-import { faTicket } from '@fortawesome/free-solid-svg-icons';  // Import de l'icône du ticket
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox } from '@fortawesome/free-solid-svg-icons';
 
-import NotificationDropdown from "components/Dropdowns/NotificationDropdown.js";
-import UserDropdown from "components/Dropdowns/UserDropdown.js";
-
-export default function Sidebarutilisateur() {
+export default function Sidebar() {
   const [collapseShow, setCollapseShow] = React.useState("hidden");
+
+
 
   return (
     <>
-      <nav className="md:left-0 md:block md:fixed md:top-0 md:bottom-0 md:overflow-y-auto md:flex-row md:flex-nowrap md:overflow-hidden shadow-xl bg-white flex flex-wrap items-center justify-between relative md:w-64 z-10 py-4 px-6">
+      <nav className="md:left-0 md:block md:fixed md:top-0 md:bottom-0 md:overflow-y-auto md:flex-row md:flex-nowrap md:overflow-hidden shadow-xl bg-gray-800 flex flex-wrap items-center justify-between relative md:w-64 z-10 py-4 px-6">
         <div className="md:flex-col md:items-stretch md:min-h-full md:flex-nowrap px-0 flex flex-wrap items-center justify-between w-full mx-auto">
           {/* Toggler */}
           <button
@@ -29,120 +27,57 @@ export default function Sidebarutilisateur() {
             to="/homepage"
           >
             <center>
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png"
-                alt="UBCI Logo"
-                style={{ height: '50px', width: '130px' }}
-              />
+            <img
+  src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png"
+  alt="STB Logo"
+  style={{ height: '75px', width: '180px' }}  // augmenté
+/>
             </center>
           </Link>
-
-          {/* User */}
-          <ul className="md:hidden items-center flex flex-wrap list-none">
-            <li className="inline-block relative">
-              <NotificationDropdown />
-            </li>
-            <li className="inline-block relative">
-              <UserDropdown />
-            </li>
-          </ul>
-
+          <hr className="my-4 border-t border-gray-600" />
           {/* Collapse */}
           <div
-            className={
-              "md:flex md:flex-col md:items-stretch md:opacity-100 md:relative md:mt-4 md:shadow-none shadow absolute top-0 left-0 right-0 z-40 overflow-y-auto overflow-x-hidden h-auto items-center flex-1 rounded " +
+             className={
+              "md:flex md:flex-col md:items-stretch md:opacity-100 md:relative md:mt-4 md:shadow-none shadow absolute top-0 left-0 right-0 z-40 overflow-y-auto overflow-x-hidden h-full justify-between items-center flex-1 rounded " +
               collapseShow
             }
           >
-            {/* Collapse header */}
-            <div className="md:min-w-full md:hidden block pb-4 mb-4 border-b border-solid border-blueGray-200">
-              <div className="flex flex-wrap">
-                <div className="w-6/12">
-                  <Link
-                    className="md:block text-left md:pb-2 text-blueGray-600 mr-0 inline-block whitespace-nowrap text-sm uppercase font-bold p-4 px-0"
-                    to="/"
-                  >
-                    Stb GestionTickets
-                  </Link>
-                </div>
-                <div className="w-6/12 flex justify-end">
-                  <button
-                    type="button"
-                    className="cursor-pointer text-black opacity-50 md:hidden px-3 py-1 text-xl leading-none bg-transparent rounded border border-solid border-transparent"
-                    onClick={() => setCollapseShow("hidden")}
-                  >
-                    <i className="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Form */}
-            <form className="mt-6 mb-4 md:hidden">
-              <div className="mb-3 pt-0">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="border-0 px-3 py-2 h-12 border border-solid  border-blueGray-500 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-base leading-snug shadow-none outline-none focus:outline-none w-full font-normal"
-                />
-              </div>
-            </form>
-
-            {/* Divider */}
-            <hr className="my-4 md:min-w-full" />
-            {/* Heading */}
-            <h6 className="md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline">
-              Gerer mon compte
-            </h6>
             {/* Navigation */}
+            <ul className="md:flex-col md:min-w-full flex flex-col list-none space-y-2 mt-1">
+     
 
-            <ul className="md:flex-col md:min-w-full flex flex-col list-none">
-       
+         
 
-              <li className="items-center">
+              <li>
                 <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/utilisateur/settings") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
-                  to="/utilisateur/settings"
-                >
-                  <i
-                    className={
-                      "fas fa-tools mr-2 text-sm " +
-                      (window.location.href.indexOf("/utilisateur/settings") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  Settings
-                </Link>
-              </li>
-              <li className="items-center">
-                <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/utilisateur/MyTickets") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/utilisateur/MyTickets"
                 >
-           
-                   <FontAwesomeIcon
-                                      icon={faTicket}
-                                      className={
-                                        "mr-2 text-sm " +
-                                        (window.location.href.indexOf("/admin/ticket") !== -1
-                                          ? "opacity-75"
-                                          : "text-blueGray-300")
-                                      }
-                                    />{" "}
-                  Mes Tickets
+                  <FontAwesomeIcon 
+                    icon={faTicket} 
+                    className="w-5 h-5 mr-3 text-purple-400" 
+                  />
+                  Tickets
+                </Link>
+              </li>
+
+         
+
+              <li>
+                <Link
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
+                  to="/utilisateur/settings"
+                >
+                  <FontAwesomeIcon 
+                    icon={faCog} 
+                    className="w-5 h-5 mr-3 text-gray-400" 
+                  />
+                  Paramètres
                 </Link>
               </li>
             </ul>
+
+            
           </div>
         </div>
       </nav>

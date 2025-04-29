@@ -1,24 +1,78 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTicket, faSignOutAlt , faUsers } from '@fortawesome/free-solid-svg-icons'; // Ajout de l'icône de déconnexion
-
-
-import NotificationDropdown from "components/Dropdowns/NotificationDropdown.js";
-import UserDropdown from "components/Dropdowns/UserDropdown.js";
+import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox } from '@fortawesome/free-solid-svg-icons';
 
 export default function Sidebar() {
   const [collapseShow, setCollapseShow] = React.useState("hidden");
+  const history = useHistory();
 
-  // Fonction de déconnexion (à implémenter selon vos besoins)
-  const handleLogout = () => {
-    console.log("Déconnexion effectuée");
-    // Ajouter ici la logique de déconnexion (nettoyage du stockage, redirection, etc.)
+  const handleLogout = async () => {
+    try {
+      const userData = localStorage.getItem('user');
+      const token = localStorage.getItem('jwt_token');
+
+      console.log('Contenu de localStorage:');
+      console.log('- user:', userData);
+      console.log('- token:', token);
+
+      if (!userData && !token) {
+        throw new Error('Aucune donnée de session trouvée');
+      }
+
+      const missingItems = [];
+      if (!userData) missingItems.push('données utilisateur');
+      if (!token) missingItems.push('jeton JWT');
+      
+      if (missingItems.length > 0) {
+        throw new Error(`Éléments manquants : ${missingItems.join(', ')}`);
+      }
+
+      let user;
+      try {
+        user = JSON.parse(userData);
+        if (!user._id) throw new Error('ID utilisateur manquant');
+      } catch (parseError) {
+        console.error('Erreur de parsing des données utilisateur:', parseError);
+        throw new Error('Données utilisateur corrompues');
+      }
+
+      const response = await fetch(`/logout/${user._id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error(`Erreur serveur: ${response.status}`);
+
+      localStorage.removeItem('user');
+      localStorage.removeItem('jwt_token');
+      history.push('/login');
+
+    } catch (error) {
+      console.error('Journal complet d\'erreur:', error);
+      
+      let errorMessage = 'Erreur inconnue';
+      if (error.message.includes('manquants')) {
+        errorMessage = `Problème de session : ${error.message}`;
+      } else if (error.message.includes('corrompues')) {
+        errorMessage = 'Session invalide, veuillez vous reconnecter';
+      } else {
+        errorMessage = `Échec technique : ${error.message}`;
+      }
+      
+      alert(`Échec de la déconnexion :\n${errorMessage}`);
+    } finally {
+      setCollapseShow("hidden");
+    }
   };
 
   return (
     <>
-     <nav className="md:left-0 md:block md:fixed md:top-0 md:bottom-0 md:overflow-y-auto md:flex-row md:flex-nowrap md:overflow-hidden shadow-xl bg-white flex flex-wrap items-center justify-between relative md:w-64 z-10 py-4 px-6">
+      <nav className="md:left-0 md:block md:fixed md:top-0 md:bottom-0 md:overflow-y-auto md:flex-row md:flex-nowrap md:overflow-hidden shadow-xl bg-gray-800 flex flex-wrap items-center justify-between relative md:w-64 z-10 py-4 px-6">
         <div className="md:flex-col md:items-stretch md:min-h-full md:flex-nowrap px-0 flex flex-wrap items-center justify-between w-full mx-auto">
           {/* Toggler */}
           <button
@@ -32,212 +86,117 @@ export default function Sidebar() {
           {/* Brand */}
           <Link
             className="md:block text-left md:pb-2 text-blueGray-600 mr-0 inline-block whitespace-nowrap text-sm uppercase font-bold p-4 px-0"
-            to="/homepage"
+            to="/admin"
           >
             <center>
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png"
-                alt="UBCI Logo"
-                style={{ height: '50px', width: '130px' }}
-              />
+            <img
+  src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png"
+  alt="STB Logo"
+  style={{ height: '75px', width: '180px' }}  // augmenté
+/>
             </center>
           </Link>
-
-          {/* User */}
-          <ul className="md:hidden items-center flex flex-wrap list-none">
-            <li className="inline-block relative">
-              <NotificationDropdown />
-            </li>
-            <li className="inline-block relative">
-              <UserDropdown />
-            </li>
-          </ul>
-
+          <hr className="my-4 border-t border-gray-600" />
           {/* Collapse */}
           <div
-            className={
-              "md:flex md:flex-col md:items-stretch md:opacity-100 md:relative md:mt-4 md:shadow-none shadow absolute top-0 left-0 right-0 z-40 overflow-y-auto overflow-x-hidden h-auto items-center flex-1 rounded " +
+             className={
+              "md:flex md:flex-col md:items-stretch md:opacity-100 md:relative md:mt-4 md:shadow-none shadow absolute top-0 left-0 right-0 z-40 overflow-y-auto overflow-x-hidden h-full justify-between items-center flex-1 rounded " +
               collapseShow
             }
           >
-            {/* Collapse header */}
-            <div className="md:min-w-full md:hidden block pb-4 mb-4 border-b border-solid border-blueGray-200">
-              <div className="flex flex-wrap">
-                <div className="w-6/12">
-                  <Link
-                    className="md:block text-left md:pb-2 text-blueGray-600 mr-0 inline-block whitespace-nowrap text-sm uppercase font-bold p-4 px-0"
-                    to="/"
-                  >
-                    Stb GestionTickets
-                  </Link>
-                </div>
-                <div className="w-6/12 flex justify-end">
-                  <button
-                    type="button"
-                    className="cursor-pointer text-black opacity-50 md:hidden px-3 py-1 text-xl leading-none bg-transparent rounded border border-solid border-transparent"
-                    onClick={() => setCollapseShow("hidden")}
-                  >
-                    <i className="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Form */}
-            <form className="mt-6 mb-4 md:hidden">
-              <div className="mb-3 pt-0">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="border-0 px-3 py-2 h-12 border border-solid  border-blueGray-500 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-base leading-snug shadow-none outline-none focus:outline-none w-full font-normal"
-                />
-              </div>
-            </form>
-
-            {/* Divider */}
-            <hr className="my-4 md:min-w-full" />
-            {/* Heading */}
-            <h6 className="md:min-w-full text-blueGray-500 text-xs uppercase font-bold block pt-1 pb-4 no-underline">
-              Admin Layout Pages
-            </h6>
             {/* Navigation */}
-
-            <ul className="md:flex-col md:min-w-full flex flex-col list-none">
-              <li className="items-center">
+            <ul className="md:flex-col md:min-w-full flex flex-col list-none space-y-2 mt-1">
+              <li>
                 <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/dashboard") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/admin/dashboard"
                 >
-                  <i
-                    className={
-                      "fas fa-tachometer-alt mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/dashboard") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  Stats
+                  <FontAwesomeIcon 
+                    icon={faChartPie} 
+                    className="w-5 h-5 mr-3 text-blue-400" 
+                  />
+                  Tableau de bord
                 </Link>
               </li>
 
-              <li className="items-center">
+              <li>
                 <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/settings") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
-                  to="/admin/settings"
-                >
-                  <i
-                    className={
-                      "fas fa-tools mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/settings") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  Settings
-                </Link>
-              </li>
-
-              <li className="items-center">
-                <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/tables") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/admin/tables"
                 >
-                  <i
-  className={
-    "fas fa-users mr-2 text-sm " +
-    (window.location.href.indexOf("/admin/tables") !== -1
-      ? "opacity-75"
-      : "text-blueGray-300")
-  }
-></i>
-{" "}
-                  Users
+                  <FontAwesomeIcon 
+                    icon={faUsers} 
+                    className="w-5 h-5 mr-3 text-green-400" 
+                  />
+                  Utilisateurs
                 </Link>
               </li>
 
-              <li className="items-center">
+              <li>
                 <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/ticket") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/admin/ticket"
                 >
-                  <FontAwesomeIcon
-                    icon={faTicket}
-                    className={
-                      "mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/ticket") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  />{" "}
-                  Ticket
+                  <FontAwesomeIcon 
+                    icon={faTicket} 
+                    className="w-5 h-5 mr-3 text-purple-400" 
+                  />
+                  Tickets
                 </Link>
               </li>
 
-              <li className="items-center">
+              <li>
                 <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/calender") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/admin/calender"
                 >
-                  <i
-                    className={
-                      "fas fa-calendar-week mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/calender") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
+                  <FontAwesomeIcon 
+                    icon={faCalendarAlt} 
+                    className="w-5 h-5 mr-3 text-yellow-400" 
+                  />
                   Calendrier
                 </Link>
               </li>
 
-              <li className="items-center">
+              <li>
                 <Link
-                  className={
-                    "text-xs uppercase py-3 font-bold block " +
-                    (window.location.href.indexOf("/admin/cardtech") !== -1
-                      ? "text-lightBlue-500 hover:text-lightBlue-600"
-                      : "text-blueGray-700 hover:text-blueGray-500")
-                  }
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/admin/cardtech"
                 >
-                  <i
-                    className={
-                      "fas fa-user-tie mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/cardtech") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  technicien
+                  <FontAwesomeIcon 
+                    icon={faToolbox} 
+                    className="w-5 h-5 mr-3 text-red-400" 
+                  />
+                  Techniciens
                 </Link>
               </li>
-             
-              
+              <li>
+                <Link
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
+                  to="/admin/settings"
+                >
+                  <FontAwesomeIcon 
+                    icon={faCog} 
+                    className="w-5 h-5 mr-3 text-gray-400" 
+                  />
+                  Paramètres
+                </Link>
+              </li>
             </ul>
+
+            {/* Déconnexion */}
+            <div className="mt-8 border-t border-gray-700 pt-4">
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full p-4 text-red-400 hover:bg-gray-700 rounded-xl transition-all duration-200"
+            >
+              <FontAwesomeIcon 
+                icon={faSignOutAlt} 
+                className="w-5 h-5 mr-3" 
+              />
+              Déconnexion
+            </button>
+          </div>
           </div>
         </div>
       </nav>

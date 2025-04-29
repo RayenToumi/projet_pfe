@@ -41,7 +41,7 @@ export default function LoginPage() {
       // Redirection selon le rôle
       switch (user.role) {
         case 'admin':
-          history.push('/homepage');
+          history.push('/admin/dashboard');
           break;
         case 'technicien':
           history.push('/homepage');
