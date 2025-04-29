@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTicket, faSignOutAlt } from '@fortawesome/free-solid-svg-icons'; // Ajout de l'icône de déconnexion
+import { faTicket, faSignOutAlt , faUsers } from '@fortawesome/free-solid-svg-icons'; // Ajout de l'icône de déconnexion
+
 
 import NotificationDropdown from "components/Dropdowns/NotificationDropdown.js";
 import UserDropdown from "components/Dropdowns/UserDropdown.js";
@@ -156,14 +157,15 @@ export default function Sidebar() {
                   to="/admin/tables"
                 >
                   <i
-                    className={
-                      "fas fa-table mr-2 text-sm " +
-                      (window.location.href.indexOf("/admin/tables") !== -1
-                        ? "opacity-75"
-                        : "text-blueGray-300")
-                    }
-                  ></i>{" "}
-                  Tables
+  className={
+    "fas fa-users mr-2 text-sm " +
+    (window.location.href.indexOf("/admin/tables") !== -1
+      ? "opacity-75"
+      : "text-blueGray-300")
+  }
+></i>
+{" "}
+                  Users
                 </Link>
               </li>
 
@@ -208,7 +210,7 @@ export default function Sidebar() {
                         : "text-blueGray-300")
                     }
                   ></i>{" "}
-                  time sheet
+                  Calendrier
                 </Link>
               </li>
 
