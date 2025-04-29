@@ -17,6 +17,7 @@ import Tables from "views/admin/Tables.js";
 import Ticket from "views/admin/Ticket.js";
 import Calender from "views/admin/Calender.js";
 import CardTech from "views/admin/CardTech.js";
+import Commentaire from "views/admin/Commentaire.js";
 
 export default function Admin() {
   return (
@@ -35,6 +36,7 @@ export default function Admin() {
             <Route path="/admin/ticket" exact component={Ticket} />
             <Route path="/admin/calender" exact component={Calender} />
             <Route path="/admin/cardtech" exact component={CardTech} />
+            <Route path="/admin/commentaire" exact component={Commentaire} />
             <Redirect from="/admin" to="/admin/dashboard" />
           </Switch>
           <FooterAdmin />

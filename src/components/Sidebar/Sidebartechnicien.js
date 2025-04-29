@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox } from '@fortawesome/free-solid-svg-icons';
+import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox, faComments } from '@fortawesome/free-solid-svg-icons'; // Ajout de faComments
 
 export default function Sidebar() {
   const [collapseShow, setCollapseShow] = React.useState("hidden");
@@ -84,7 +84,18 @@ export default function Sidebar() {
                   Calendrier
                 </Link>
               </li>
-
+ <li>
+                <Link
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
+                  to="/technicien/commentaire"
+                >
+                  <FontAwesomeIcon 
+                    icon={faComments} // Utilisation correcte de faComments
+                    className="w-5 h-5 mr-3 text-red-400" 
+                  />
+                  les avis des clients
+                </Link>
+              </li>
               <li>
                 <Link
                   className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"

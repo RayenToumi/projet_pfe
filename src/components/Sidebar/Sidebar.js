@@ -1,7 +1,8 @@
 import React from "react";
 import { Link, useHistory } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox } from '@fortawesome/free-solid-svg-icons';
+import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox, faComments } from '@fortawesome/free-solid-svg-icons'; // Ajout de faComments
+
 
 export default function Sidebar() {
   const [collapseShow, setCollapseShow] = React.useState("hidden");
@@ -173,6 +174,18 @@ export default function Sidebar() {
               <li>
                 <Link
                   className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
+                  to="/admin/commentaire"
+                >
+                  <FontAwesomeIcon 
+                    icon={faComments} // Utilisation correcte de faComments
+                    className="w-5 h-5 mr-3 text-red-400" 
+                  />
+                  les avis des clients
+                </Link>
+              </li>
+              <li>
+                <Link
+                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/admin/settings"
                 >
                   <FontAwesomeIcon 
@@ -187,15 +200,16 @@ export default function Sidebar() {
             {/* Déconnexion */}
             <div className="mt-8 border-t border-gray-700 pt-4">
             <button
-              onClick={handleLogout}
-              className="flex items-center w-full p-4 text-red-400 hover:bg-gray-700 rounded-xl transition-all duration-200"
-            >
-              <FontAwesomeIcon 
-                icon={faSignOutAlt} 
-                className="w-5 h-5 mr-3" 
-              />
-              Déconnexion
-            </button>
+  onClick={handleLogout}
+  className="flex items-center w-full p-4 text-red-500 hover:bg-gray-700 rounded-xl transition-all duration-200"
+>
+  <FontAwesomeIcon 
+    icon={faSignOutAlt} 
+    className="w-5 h-5 mr-3 text-red-500" 
+  />
+  Déconnexion
+</button>
+
           </div>
           </div>
         </div>

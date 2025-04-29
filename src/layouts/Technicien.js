@@ -11,6 +11,8 @@ import FooterAdmin from "components/Footers/FooterAdmin.js";
 import Settings from "views/technicien/Settings";
 import Ticket from "views/technicien/Ticket";
 import Calender from "views/technicien/Calender";
+import Dashboard from "views/technicien/Dashboard";
+import Commentaire from "views/technicien/Commentaire";
 
 
 export default function Technicien() {
@@ -26,6 +28,8 @@ export default function Technicien() {
             <Route path="/technicien/settings" exact component={Settings} />
             <Route path="/technicien/ticket" exact component={Ticket} />
             <Route path="/technicien/calender" exact component={Calender} />
+            <Route path="/technicien/dashboard" exact component={Dashboard} />
+            <Route path="/technicien/commentaire" exact component={Commentaire} />
             <Redirect from="/technicien" to="/technicien/ticket" />
           </Switch>
           <FooterAdmin />

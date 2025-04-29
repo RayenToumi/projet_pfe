@@ -6,11 +6,23 @@ function MyTickets() {
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchId, setSearchId] = useState("");
+  const [feedback, setFeedback] = useState({ note: "", commentaire: "" });
+  const [submitted, setSubmitted] = useState(false);
 
   const getShortCode = (id) => {
     const strId = String(id);
     if (!strId || strId.length < 10) return "XXXX";
-    return strId.substring(6, 10); // index 6 inclus, 10 exclu
+    return strId.substring(6, 10);
+  };
+
+  const handleSubmitFeedback = async () => {
+    console.log("Feedback soumis :", {
+      ticketId: selectedTicket._id,
+      ...feedback,
+    });
+
+    // TODO: envoyer au backend
+    setSubmitted(true);
   };
 
   useEffect(() => {
@@ -21,7 +33,7 @@ function MyTickets() {
 
     const fetchTickets = async () => {
       try {
-        const response = await fetch('/alltickets');
+        const response = await fetch("/alltickets");
         const data = await response.json();
         setTickets(data);
       } catch (error) {
@@ -33,47 +45,52 @@ function MyTickets() {
   }, []);
 
   const badgeStyle = (status) => {
-    const statusNormalized = status?.toLowerCase() || ''; // Normalisation en minuscules
-  
+    const statusNormalized = status?.toLowerCase() || "";
     return {
       padding: "0.25rem 0.5rem",
-      borderRadius: "0px", // Bordure carrée
+      borderRadius: "0px",
       fontSize: "0.75rem",
       fontWeight: "500",
       backgroundColor:
-        statusNormalized === "ouvert" ? "#FEE2E2" : // Rouge clair pour "Ouvert"
-        statusNormalized === "en cours" ? "#FFEDD5" : // Orange clair pour "En cours"
-        statusNormalized === "fermé" ? "#DCFCE7" : // Vert clair pour "Fermé"
-        "#FFFFFF", // Valeur par défaut si aucun statut ne correspond
+        statusNormalized === "ouvert"
+          ? "#FEE2E2"
+          : statusNormalized === "en cours"
+          ? "#FFEDD5"
+          : statusNormalized === "fermé"
+          ? "#DCFCE7"
+          : "#FFFFFF",
       color:
-        statusNormalized === "ouvert" ? "#DC2626" : // Rouge foncé pour "Ouvert"
-        statusNormalized === "en cours" ? "#C2410C" : // Orange foncé pour "En cours"
-        statusNormalized === "fermé" ? "#065F46" : // Vert foncé pour "Fermé"
-        "#000000", // Valeur par défaut si aucun statut ne correspond
+        statusNormalized === "ouvert"
+          ? "#DC2626"
+          : statusNormalized === "en cours"
+          ? "#C2410C"
+          : statusNormalized === "fermé"
+          ? "#065F46"
+          : "#000000",
       textAlign: "center",
       minWidth: "80px",
       display: "inline-block",
-      border: "1px solid", // Bordure de contraste
+      border: "1px solid",
       borderColor:
-        statusNormalized === "ouvert" ? "#DC2626" : // Rouge foncé pour "Ouvert"
-        statusNormalized === "en cours" ? "#C2410C" : // Orange foncé pour "En cours"
-        statusNormalized === "fermé" ? "#065F46" : // Vert foncé pour "Fermé"
-        "#000000", // Valeur par défaut si aucun statut ne correspond
+        statusNormalized === "ouvert"
+          ? "#DC2626"
+          : statusNormalized === "en cours"
+          ? "#C2410C"
+          : statusNormalized === "fermé"
+          ? "#065F46"
+          : "#000000",
     };
   };
-  
-  
-  
 
-  const filteredTickets = tickets.filter(ticket =>
-    searchId === "" || ticket._id?.toString().includes(searchId)
+  const filteredTickets = tickets.filter(
+    (ticket) => searchId === "" || ticket._id?.toString().includes(searchId)
   );
 
   return (
     <>
       <IndexNavbar />
       <div style={container}>
-      <div style={contentWrapper}>
+        <div style={contentWrapper}>
           <img
             src="/images/support-banner.jpg"
             alt="Bannière Support"
@@ -82,7 +99,6 @@ function MyTickets() {
           <h1 style={title}>Espace Support Client</h1>
           <p style={subtitle}>Consultez vos tickets et suivez leur avancement</p>
 
-          {/* Champ de recherche */}
           <div style={{ marginBottom: "1rem", textAlign: "center" }}>
             <input
               type="text"
@@ -95,32 +111,33 @@ function MyTickets() {
                 maxWidth: "300px",
                 borderRadius: "6px",
                 border: "1px solid #ccc",
-                fontSize: "1rem"
+                fontSize: "1rem",
               }}
             />
           </div>
 
           <div style={ticketGrid}>
             <div style={ticketList}>
-              {filteredTickets.map((ticket) => {
-                console.log("TICKET:", ticket); // Pour debug
-                return (
-                  <div
-                    key={ticket._id}
-                    style={ticketItem}
-                    onClick={() => setSelectedTicket(ticket)}
-                  >
-                    <div style={ticketHeader}>
-                      <span style={ticketId}>
-                        {ticket._id ? `#${getShortCode(ticket._id)}` : "ID non disponible"}
-                      </span>
-                      <span style={badgeStyle(ticket.statut)}>{ticket.statut}</span>
-                    </div>
-                    <h3 style={ticketTitle}>{ticket.sujet}</h3>
-                    <p style={ticketDate}>{ticket.date?.slice(0, 10)}</p>
+              {filteredTickets.map((ticket) => (
+                <div
+                  key={ticket._id}
+                  style={ticketItem}
+                  onClick={() => {
+                    setSelectedTicket(ticket);
+                    setSubmitted(false);
+                    setFeedback({ note: "", commentaire: "" });
+                  }}
+                >
+                  <div style={ticketHeader}>
+                    <span style={ticketId}>
+                      {ticket._id ? `#${getShortCode(ticket._id)}` : "ID non disponible"}
+                    </span>
+                    <span style={badgeStyle(ticket.statut)}>{ticket.statut}</span>
                   </div>
-                );
-              })}
+                  <h3 style={ticketTitle}>{ticket.sujet}</h3>
+                  <p style={ticketDate}>{ticket.date?.slice(0, 10)}</p>
+                </div>
+              ))}
               {filteredTickets.length === 0 && (
                 <p style={{ textAlign: "center", color: "#999" }}>Aucun ticket trouvé.</p>
               )}
@@ -130,7 +147,9 @@ function MyTickets() {
               <div style={detailsPanel}>
                 <div style={detailsHeader}>
                   <h2 style={detailsTitle}>Détails du ticket</h2>
-                  <button style={closeButton} onClick={() => setSelectedTicket(null)}>×</button>
+                  <button style={closeButton} onClick={() => setSelectedTicket(null)}>
+                    ×
+                  </button>
                 </div>
                 <div style={detailsContent}>
                   <div style={detailRow}>
@@ -139,32 +158,126 @@ function MyTickets() {
                   </div>
                   <div style={detailRow}>
                     <span style={detailLabel}>Statut :</span>
-                    <span style={badgeStyle(selectedTicket.statut)}>{selectedTicket.statut}</span>
+                    <span style={badgeStyle(selectedTicket.statut)}>
+                      {selectedTicket.statut}
+                    </span>
                   </div>
                   <div style={detailRow}>
                     <span style={detailLabel}>Date :</span>
                     <span>{selectedTicket.date?.slice(0, 10)}</span>
                   </div>
-
                   <div style={detailDescription}>
                     <p style={detailLabel}>Description :</p>
                     <p>{selectedTicket.description}</p>
                   </div>
+
+                  {/* Évaluation si ticket fermé */}
+                  {selectedTicket.statut?.toLowerCase() === "fermé" && (
+                    <div
+                      style={{
+                        marginTop: "2rem",
+                        borderTop: "1px solid #ddd",
+                        paddingTop: "1rem",
+                      }}
+                    >
+                      <h4
+                        style={{
+                          fontSize: "1.1rem",
+                          marginBottom: "0.5rem",
+                          color: "#1a237e",
+                        }}
+                      >
+                        Évaluez l’intervention :
+                      </h4>
+
+                      {submitted ? (
+                        <p style={{ color: "green" }}>Merci pour votre retour !</p>
+                      ) : (
+                        <>
+                          <div style={{ marginBottom: "1rem" }}>
+                            <label
+                              style={{
+                                fontWeight: "bold",
+                                display: "block",
+                                marginBottom: "0.5rem",
+                              }}
+                            >
+                              Note (1 à 5) :
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="5"
+                              value={feedback.note}
+                              onChange={(e) =>
+                                setFeedback({ ...feedback, note: e.target.value })
+                              }
+                              style={{
+                                padding: "0.4rem",
+                                border: "1px solid #ccc",
+                                borderRadius: "4px",
+                                width: "60px",
+                              }}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: "1rem" }}>
+                            <label
+                              style={{
+                                fontWeight: "bold",
+                                display: "block",
+                                marginBottom: "0.5rem",
+                              }}
+                            >
+                              Commentaire :
+                            </label>
+                            <textarea
+                              rows="3"
+                              value={feedback.commentaire}
+                              onChange={(e) =>
+                                setFeedback({ ...feedback, commentaire: e.target.value })
+                              }
+                              style={{
+                                width: "100%",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                padding: "0.5rem",
+                                resize: "vertical",
+                              }}
+                            />
+                          </div>
+
+                          <button
+                            onClick={handleSubmitFeedback}
+                            style={{
+                              backgroundColor: "#1a237e",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "0.5rem 1rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Envoyer
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
-   
       <Footerr />
     </>
   );
 }
 
-// Styles
+// Styles (inchangés)
 const container = {
-  minHeight: "100vh", // Prend toute la hauteur de l'écran
+  minHeight: "100vh",
   flex: 1,
   display: "flex",
   flexDirection: "column",
@@ -181,7 +294,7 @@ const bannerImage = {
   borderRadius: "12px",
   objectFit: "cover",
   marginBottom: "1rem",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
+  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
 };
 const title = {
   color: "#1a237e",
@@ -193,7 +306,7 @@ const title = {
   textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)",
   borderBottom: "3px solid #c5cae9",
   paddingBottom: "0.5rem",
-  letterSpacing: "1px"
+  letterSpacing: "1px",
 };
 const subtitle = { textAlign: "center", color: "#555", marginBottom: "2rem" };
 const ticketGrid = { display: "grid", gap: "2rem", gridTemplateColumns: "1fr" };
@@ -205,14 +318,29 @@ const ticketItem = {
   marginBottom: "1rem",
   cursor: "pointer",
   border: "1px solid #eee",
-  transition: "all 0.3s"
+  transition: "all 0.3s",
 };
-const ticketHeader = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" };
+const ticketHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "0.5rem",
+};
 const ticketId = { color: "#666", fontSize: "0.9rem" };
 const ticketTitle = { fontSize: "1.1rem", color: "#333", margin: "0 0 0.5rem 0" };
 const ticketDate = { color: "#999", fontSize: "0.85rem", margin: "0" };
-const detailsPanel = { backgroundColor: "white", borderRadius: "8px", padding: "1.5rem", border: "1px solid #eee" };
-const detailsHeader = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" };
+const detailsPanel = {
+  backgroundColor: "white",
+  borderRadius: "8px",
+  padding: "1.5rem",
+  border: "1px solid #eee",
+};
+const detailsHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "1.5rem",
+};
 const detailsTitle = { fontSize: "1.5rem", color: "#1a237e", margin: "0" };
 const closeButton = {
   background: "none",
@@ -220,7 +348,7 @@ const closeButton = {
   fontSize: "1.5rem",
   color: "#666",
   cursor: "pointer",
-  padding: "0 0.5rem"
+  padding: "0 0.5rem",
 };
 const detailsContent = { lineHeight: "1.6" };
 const detailRow = {
@@ -228,7 +356,7 @@ const detailRow = {
   justifyContent: "space-between",
   marginBottom: "1rem",
   paddingBottom: "1rem",
-  borderBottom: "1px solid #eee"
+  borderBottom: "1px solid #eee",
 };
 const detailLabel = { color: "#666", fontWeight: "bold", marginRight: "1rem" };
 const detailDescription = { marginTop: "2rem" };
