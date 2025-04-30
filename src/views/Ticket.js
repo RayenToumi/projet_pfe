@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
-
+import { useHistory } from "react-router-dom"; 
 function NewTicketForm() {
+  const history = useHistory();
   const [formData, setFormData] = useState({
     sujet: "",
     type: "",
@@ -25,38 +26,58 @@ function NewTicketForm() {
     setError(null);
 
     try {
-      const newTicket = {
-        ...formData,
-        id: Date.now(),
-        date: new Date().toLocaleDateString(),
-        statut: "Ouvert",
-      };
+      // 1. Récupération du token JWT
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        throw new Error("Vous devez être connecté pour créer un ticket");
+      }
 
+      // 2. Envoi des données au backend
       const response = await fetch("/addticket", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error(`Erreur HTTP ${response.status}`);
+      // 3. Gestion des erreurs HTTP
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la création du ticket");
+      }
 
-      const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
-      storedTickets.push(newTicket);
-      localStorage.setItem("tickets", JSON.stringify(storedTickets));
+      // 4. Traitement de la réponse
+      const newTicket = await response.json();
 
-      window.location.href = "/MyTickets";
-    } catch (error) {
+      // 5. Mise à jour du localStorage (fallback offline)
       const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
       storedTickets.push({
-        ...formData,
-        id: Date.now(),
-        date: new Date().toLocaleDateString(),
-        statut: "Erreur d'envoi - Sauvegardé localement",
+        ...newTicket,
+        id: newTicket._id,
+        date: new Date(newTicket.createdAt).toLocaleDateString("fr-FR")
       });
       localStorage.setItem("tickets", JSON.stringify(storedTickets));
-      setError(`Échec de l'envoi. ${error.message}`);
+
+      // 6. Redirection vers la liste des tickets
+      history.push("/MyTickets");
+
+    } catch (error) {
+      // Gestion des erreurs et sauvegarde locale
+      const offlineTicket = {
+        ...formData,
+        id: Date.now(),
+        date: new Date().toLocaleDateString("fr-FR"),
+        statut: "En attente de synchronisation",
+        _id: `offline-${Date.now()}`
+      };
+
+      const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+      storedTickets.push(offlineTicket);
+      localStorage.setItem("tickets", JSON.stringify(storedTickets));
+
+      setError(`${error.message} - Le ticket a été sauvegardé localement`);
     } finally {
       setIsSubmitting(false);
     }

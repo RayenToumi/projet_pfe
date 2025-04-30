@@ -29,16 +29,20 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         default: 'utilisateur',
-       
     },
     specialite: {
         type: String,
         required: function () {
-          return this.role === 'technicien';
+            return this.role === 'technicien';
         }
-      }
+    },
+    actif: {
+        type: Boolean,
+        default: function () {
+            return this.role === 'technicien' ? true : undefined;
+        }
     }
-, { timestamps: true });
+}, { timestamps: true });
 
 userSchema.statics.login= async function (email,password) {
     
@@ -65,9 +69,7 @@ userSchema.pre("save", async function (next) {
         next(error);
     }
 });
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
-
-
-const User = mongoose.model("User", userSchema);
 module.exports = User;
 

@@ -20,8 +20,9 @@ export default function TechnicienTable({ color }) {
           id: tech._id,
           nom: tech.nom,
           prenom: tech.prenom,
-          email: tech.email, // Ajout de l'email
+          email: tech.email,
           specialite: tech.specialite,
+          actif: tech.actif, // Ajout du champ actif
           password: ''
         }));
         
@@ -48,9 +49,10 @@ export default function TechnicienTable({ color }) {
     prenom: "",
     email: "",
     telephone: "",
-    role: "technicien", // Forcer le rôle ici
-    password: "", // À garder si le backend génère le mot de passe
+    role: "technicien",
+    password: "",
     specialite: "",
+    actif: true // Valeur par défaut
   });
   const [errors, setErrors] = useState({});
 
@@ -76,7 +78,11 @@ export default function TechnicienTable({ color }) {
     if (!technicien.email.trim()) errors.email = "L'email est requis";
     if (!technicien.telephone.trim()) errors.telephone = "Le téléphone est requis";
     if (!technicien.specialite) errors.specialite = "La spécialité est requise";
-    return errors; // Retirer la validation du password
+    if (typeof technicien.actif !== 'boolean') {
+      errors.actif = "Statut invalide";
+    }
+    return errors;
+   
   };
 
   const validateEditForm = (technicien) => {
@@ -104,7 +110,9 @@ export default function TechnicienTable({ color }) {
           tel: newTechnicien.telephone, // Correction ici
           role: 'technicien',
           password: undefined,
-          telephone: undefined // Supprimer l'ancien champ
+          telephone: undefined ,
+          actif: newTechnicien.actif 
+          // Supprimer l'ancien champ
         }),
       });
   
@@ -155,7 +163,8 @@ export default function TechnicienTable({ color }) {
           nom: editingTechnicien.nom,
           prenom: editingTechnicien.prenom,
           specialite: editingTechnicien.specialite,
-          password: editingTechnicien.password
+          password: editingTechnicien.password,
+          actif: editingTechnicien.actif // Ajouter ce champ
         }),
       });
   
@@ -166,10 +175,12 @@ export default function TechnicienTable({ color }) {
   
       const updatedTechnicien = await response.json();
       
+      // Mettre à jour l'état avec la nouvelle valeur actif
       setTechniciens(techniciens.map(tech => 
         tech.id === updatedTechnicien._id ? {
           ...tech,
-          ...updatedTechnicien
+          ...updatedTechnicien,
+          actif: updatedTechnicien.actif // Assurer la mise à jour du statut
         } : tech
       ));
       
@@ -391,7 +402,9 @@ export default function TechnicienTable({ color }) {
         <th className="px-4 py-4 font-medium w-[25%] min-w-[150px]">Nom</th>
         <th className="px-4 py-4 font-medium w-[25%] min-w-[150px]">Prénom</th>
         <th className="px-4 py-4 font-medium w-[25%] min-w-[180px]">Spécialité</th>
+        <th className="px-4 py-4 font-medium w-[15%] min-w-[120px]">Statut</th>
         <th className="px-4 py-4 font-medium w-[15%] min-w-[120px]">Actions</th>
+        
       </tr>
     </thead>
 <tbody>
@@ -405,11 +418,43 @@ export default function TechnicienTable({ color }) {
       <td className="px-6 py-4 whitespace-nowrap">{tech.id}</td>
       <td className="px-6 py-4 whitespace-nowrap">{tech.nom}</td>
       <td className="px-6 py-4 whitespace-nowrap">{tech.prenom}</td>
+      
       <td className="px-6 py-4 whitespace-nowrap">
         <span style={specialiteStyle(tech.specialite)}>
           {tech.specialite}
         </span>
       </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+      {tech.actif ? (
+  <span
+    style={{
+      color: '#28a745', // Vert
+      fontWeight: '500', // Poids de la police modéré
+      fontSize: '14px', // Taille de police plus petite
+      backgroundColor: '#d4edda', // Fond vert clair
+      padding: '4px 8px',
+      borderRadius: '5px',
+      textAlign: 'center',
+    }}
+  >
+    Actif
+  </span>
+) : (
+  <span
+    style={{
+      color: '#dc3545', // Rouge
+      fontWeight: '500',
+      fontSize: '14px',
+      backgroundColor: '#f8d7da', // Fond rouge clair
+      padding: '4px 8px',
+      borderRadius: '5px',
+      textAlign: 'center',
+    }}
+  >
+    Inactif
+  </span>
+)}
+</td>
       <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex">
                     <button
@@ -487,6 +532,7 @@ export default function TechnicienTable({ color }) {
                 />
                 {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
               </div>
+              
               <div className="gp-form-group">
   <label className="block font-semibold mb-1">Téléphone *</label>
   <input
@@ -620,6 +666,30 @@ export default function TechnicienTable({ color }) {
             placeholder="nouveau mot de passe"
           />
         </div>
+        <div className="gp-form-group">
+  <label className="block font-semibold mb-1">Statut</label>
+  <label className="inline-flex items-center cursor-pointer">
+  <input
+  type="checkbox"
+  name="actif"
+  checked={editingTechnicien?.actif || false}
+  onChange={(e) => handleEditChange({
+    target: {
+      name: 'actif',
+      value: e.target.checked
+    }
+  })}
+  className="form-checkbox h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-400 rounded-lg transition duration-200 ease-in-out transform hover:scale-105"
+  style={{
+    backgroundColor: editingTechnicien?.actif ? '#4caf50' : '#f44336',
+    borderColor: editingTechnicien?.actif ? '#388e3c' : '#d32f2f',
+  }}
+/>
+    <span className="ml-2">
+      {editingTechnicien?.actif ? 'Actif' : 'Inactif'}
+    </span>
+  </label>
+</div>
 
         <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
           <button 

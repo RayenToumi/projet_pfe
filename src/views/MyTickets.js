@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
 
 function MyTickets() {
+  
   const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchId, setSearchId] = useState("");
   const [feedback, setFeedback] = useState({ note: "", commentaire: "" });
@@ -30,19 +33,37 @@ function MyTickets() {
     document.body.style.minHeight = "100vh";
     document.body.style.display = "flex";
     document.body.style.flexDirection = "column";
-
+  
     const fetchTickets = async () => {
       try {
-        const response = await fetch("/alltickets");
+        const token = localStorage.getItem('jwt_token');
+        const user = JSON.parse(localStorage.getItem('user')); 
+        
+        const response = await fetch(`/user/${user._id}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
         const data = await response.json();
         setTickets(data);
       } catch (error) {
-        console.error("Erreur lors de la récupération des tickets:", error);
+        console.error("Error fetching tickets:", error);
+        // Fallback vers le localStorage
+        const localTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+        setTickets(localTickets);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchTickets();
   }, []);
+  
+ 
+  
+  
+  
 
   const badgeStyle = (status) => {
     const statusNormalized = status?.toLowerCase() || "";

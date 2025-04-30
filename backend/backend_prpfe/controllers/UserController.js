@@ -52,8 +52,9 @@ module.exports.addUser = async (req, res) => {
       email,
       password: rawPassword,
       tel,
-      role: role || 'utilisateur', // Défaut à "user" si aucun rôle n'est spécifié
-      specialite: role === 'technicien' ? specialite : undefined // Ajouter la spécialité si le rôle est technicien
+      role: role || 'utilisateur',
+      specialite: role === 'technicien' ? specialite : undefined,
+      actif: role === 'technicien' ? true : undefined // Ajout conditionnel de "actif"
     });
 
     const userAdded = await newUser.save();
@@ -139,7 +140,7 @@ module.exports.deleteUser = async (req, res) => {
 module.exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nom, prenom, email, password, tel, role } = req.body;
+    const { nom, prenom, email, password, tel, role, actif } = req.body;
 
     const user = await userModal.findById(id);
     if (!user) {
@@ -181,6 +182,10 @@ module.exports.updateUser = async (req, res) => {
       rawPassword = password;
       modifications.push(`Mot de passe: modifié`);
       user.password = password; // Assurez-vous de hash le mot de passe avant de l'enregistrer
+    }
+    if (typeof actif === 'boolean' && actif !== user.actif) {
+      modifications.push(`Statut: ${user.actif ? 'Actif' : 'Inactif'} → ${actif ? 'Actif' : 'Inactif'}`);
+      user.actif = actif;
     }
 
     const updatedUser = await user.save();
@@ -259,35 +264,42 @@ const jwt = require("jsonwebtoken")
 const createToken=(id)=>{
   return jwt.sign({id},'net stbticket 2025',{expiresIn : '1m'})
 }
-module.exports.login = async (req,res)=>{
+module.exports.login = async (req, res) => {
   try {
-      const { email , password} = req.body
-      
-      const user = await userModal.login(email,password)
-      const connecte = true
-      await userModal.findByIdAndUpdate(user._id,{
-          $set: {connecte}
-      })
-      const token = createToken(user._id)
-      res.cookie('jwt_token',token,{httpOnly:true},{maxAge:'60*1000'})
-      
-      res.status(200).json({
-        message: "connected",
-        token: token,
-        user: { // Ajouter les champs nécessaires
-          _id: user._id,
-          email: user.email,
-          role: user.role,
-          nom: user.nom,
-          prenom: user.prenom,
-          tel: user.tel,
-          password: user.password
-        }
-      });
+    const { email, password } = req.body;
+    
+    const user = await userModal.login(email, password);
+    const connecte = true;
+    
+    await userModal.findByIdAndUpdate(user._id, { $set: { connecte } });
+    
+    // Modifier la durée ici (ex: 1 heure)
+    const token = jwt.sign({ id: user._id }, 'secret-key', { expiresIn: '1h' });
+    
+    // Corriger la configuration du cookie
+    res.cookie('jwt_token', token, { 
+      httpOnly: true,
+      maxAge: 60 * 60 * 1000 // 1 heure en millisecondes
+    });
+    
+    res.status(200).json({
+      message: "connected",
+      token: token,
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+        nom: user.nom,
+        prenom: user.prenom,
+        tel: user.tel
+        // Ne jamais envoyer le mot de passe même hashé
+      }
+    });
+    
   } catch (error) {
-      res.status(500).json({message:error.message} )
+    res.status(500).json({ message: error.message });
   }
-}
+};
 
 module.exports.logout = async (req, res) => {
   try {
