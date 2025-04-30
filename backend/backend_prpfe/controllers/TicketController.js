@@ -54,15 +54,25 @@ module.exports.getAlltickets = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    const formattedTickets = ticketlist.map(ticket => ({
-      ...ticket._doc,
-      createur: {
-        surnom: `${ticket.user.nom} ${ticket.user.prenom}`,
-        email: ticket.user.email
-      },
-      date: new Date(ticket.date).toLocaleDateString('fr-FR'),
-      statut: ticket.statut.charAt(0).toUpperCase() + ticket.statut.slice(1)
-    }));
+    const formattedTickets = ticketlist.map(ticket => {
+      // Gestion explicite des utilisateurs manquants
+      const createur = ticket.user 
+        ? { 
+            surnom: `${ticket.user.nom} ${ticket.user.prenom}`, 
+            email: ticket.user.email 
+          }
+        : { 
+            surnom: "Utilisateur supprimé", 
+            email: "N/A" 
+          };
+
+      return {
+        ...ticket._doc,
+        createur,
+        date: new Date(ticket.date).toLocaleDateString('fr-FR'),
+        statut: ticket.statut.charAt(0).toUpperCase() + ticket.statut.slice(1)
+      };
+    });
 
     res.status(200).json(formattedTickets);
   } catch (error) {

@@ -8,7 +8,8 @@ function MyTickets() {
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchId, setSearchId] = useState("");
-  const [feedback, setFeedback] = useState({ note: "", commentaire: "" });
+  const [feedback, setFeedback] = useState({ commentaire: "" });
+
   const [submitted, setSubmitted] = useState(false);
 
   const getShortCode = (id) => {
@@ -20,8 +21,9 @@ function MyTickets() {
   const handleSubmitFeedback = async () => {
     console.log("Feedback soumis :", {
       ticketId: selectedTicket._id,
-      ...feedback,
+      commentaire: feedback.commentaire,
     });
+    
 
     // TODO: envoyer au backend
     setSubmitted(true);
@@ -189,97 +191,71 @@ function MyTickets() {
 
                   {/* Évaluation si ticket fermé */}
                   {selectedTicket.statut?.toLowerCase() === "fermé" && (
-                    <div
-                      style={{
-                        marginTop: "2rem",
-                        borderTop: "1px solid #ddd",
-                        paddingTop: "1rem",
-                      }}
-                    >
-                      <h4
-                        style={{
-                          fontSize: "1.1rem",
-                          marginBottom: "0.5rem",
-                          color: "#1a237e",
-                        }}
-                      >
-                        Évaluez l’intervention :
-                      </h4>
+  <div
+    style={{
+      marginTop: "2rem",
+      borderTop: "1px solid #ddd",
+      paddingTop: "1rem",
+    }}
+  >
+    <h4
+      style={{
+        fontSize: "1.1rem",
+        marginBottom: "0.5rem",
+        color: "#1a237e",
+      }}
+    >
+      Évaluez l’intervention :
+    </h4>
 
-                      {submitted ? (
-                        <p style={{ color: "green" }}>Merci pour votre retour !</p>
-                      ) : (
-                        <>
-                          <div style={{ marginBottom: "1rem" }}>
-                            <label
-                              style={{
-                                fontWeight: "bold",
-                                display: "block",
-                                marginBottom: "0.5rem",
-                              }}
-                            >
-                              Note (1 à 5) :
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="5"
-                              value={feedback.note}
-                              onChange={(e) =>
-                                setFeedback({ ...feedback, note: e.target.value })
-                              }
-                              style={{
-                                padding: "0.4rem",
-                                border: "1px solid #ccc",
-                                borderRadius: "4px",
-                                width: "60px",
-                              }}
-                            />
-                          </div>
+    {submitted ? (
+      <p style={{ color: "green" }}>Merci pour votre retour !</p>
+    ) : (
+      <>
+        <div style={{ marginBottom: "1rem" }}>
+          <label
+            style={{
+              fontWeight: "bold",
+              display: "block",
+              marginBottom: "0.5rem",
+            }}
+          >
+            Commentaire :
+          </label>
+          <textarea
+            rows="3"
+            value={feedback.commentaire}
+            onChange={(e) =>
+              setFeedback({ ...feedback, commentaire: e.target.value })
+            }
+            style={{
+              width: "100%",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+              padding: "0.5rem",
+              resize: "vertical",
+            }}
+          />
+        </div>
 
-                          <div style={{ marginBottom: "1rem" }}>
-                            <label
-                              style={{
-                                fontWeight: "bold",
-                                display: "block",
-                                marginBottom: "0.5rem",
-                              }}
-                            >
-                              Commentaire :
-                            </label>
-                            <textarea
-                              rows="3"
-                              value={feedback.commentaire}
-                              onChange={(e) =>
-                                setFeedback({ ...feedback, commentaire: e.target.value })
-                              }
-                              style={{
-                                width: "100%",
-                                borderRadius: "4px",
-                                border: "1px solid #ccc",
-                                padding: "0.5rem",
-                                resize: "vertical",
-                              }}
-                            />
-                          </div>
+        <button
+          onClick={handleSubmitFeedback}
+          style={{
+            backgroundColor: "#1a237e",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            padding: "0.5rem 1rem",
+            cursor: "pointer",
+          }}
+        >
+          Envoyer
+        </button>
+      </>
+    )}
+  </div>
+)}
 
-                          <button
-                            onClick={handleSubmitFeedback}
-                            style={{
-                              backgroundColor: "#1a237e",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: "4px",
-                              padding: "0.5rem 1rem",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Envoyer
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
