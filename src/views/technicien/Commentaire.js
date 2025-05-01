@@ -1,54 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { FaEye, FaTrash } from "react-icons/fa";
 import { X } from "lucide-react";
 
 export default function AvisClientTable({ color }) {
-  const [avis, setAvis] = useState([
-    {
-      id: 1,
-      ticketId: "TKT-001",
-      nom: "Dubois",
-      prenom: "Marc",
-      commentaire: "Service rapide et professionnel. Mon ordinateur est comme neuf !",
-    },
-    {
-      id: 2,
-      ticketId: "TKT-002",
-      nom: "Leroy",
-      prenom: "Julie",
-      commentaire: "Intervention un peu longue mais résultat impeccable.",
-    },
-    {
-      id: 3,
-      ticketId: "TKT-003",
-      nom: "Moreau",
-      prenom: "Luc",
-      commentaire: "Technicien très compétent et sympathique.",
-    },
-  ]);
+  const [avis, setAvis] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Déplacer ici
+  const [isError, setIsError] = useState(false); // Déplacer ici
+
+  useEffect(() => {
+    const fetchAvis = async () => {
+      try {
+        const response = await fetch('/getcom');
+        const result = await response.json();
+        console.log(result);
+    
+        if (result.success) {
+          setAvis(result.data);
+        } else {
+          throw new Error('Erreur dans les données reçues');
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération des avis:", error);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+  
+    fetchAvis();
+  }, []);
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterId, setFilterId] = useState("");
 
-  const [deleteModalOuvert, setDeleteModalOuvert] = useState(false);
-  const [avisIdToDelete, setAvisIdToDelete] = useState(null);
+
   const [detailModalOuvert, setDetailModalOuvert] = useState(false);
   const [avisDetail, setAvisDetail] = useState(null);
 
-  const confirmDelete = () => {
-    setAvis(avis.filter(a => a.id !== avisIdToDelete));
-    setDeleteModalOuvert(false);
-  };
+ 
+
+  
 
   const filteredAvis = avis.filter(a => {
-    const matchesId = filterId ? a.ticketId.toLowerCase().includes(filterId.toLowerCase()) : true;
-    const matchesSearch = searchQuery
-      ? a.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.prenom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.commentaire.toLowerCase().includes(searchQuery.toLowerCase())
+    // Ajouter des vérifications de sécurité pour les champs optionnels
+    const safeNom = a.nom?.toLowerCase() || '';
+    const safePrenom = a.prenom?.toLowerCase() || '';
+    const safeCommentaire = a.commentaire?.toLowerCase() || '';
+    const safeTicket = a.ticket?.toLowerCase() || '';
+  
+    const matchesId = filterId 
+      ? safeTicket.includes(filterId.toLowerCase())
       : true;
-
+  
+    const matchesSearch = searchQuery
+      ? safeNom.includes(searchQuery.toLowerCase()) ||
+        safePrenom.includes(searchQuery.toLowerCase()) ||
+        safeCommentaire.includes(searchQuery.toLowerCase())
+      : true;
+  
     return matchesId && matchesSearch;
   });
 
@@ -170,83 +182,100 @@ export default function AvisClientTable({ color }) {
             </tr>
           </thead>
           <tbody>
-            {filteredAvis.map((a) => (
-              <tr 
-                key={a.id} 
-                className={`border-t ${
-                  color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"
-                } transition-colors`}
-              >
-                <td className="px-6 py-4">{a.ticketId}</td>
-                <td className="px-6 py-4">{a.nom}</td>
-                <td className="px-6 py-4">{a.prenom}</td>
-                <td className="px-6 py-4">
-                  <div className="comment-snippet">
-                    {a.commentaire}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex">
-                    <button
-                      onClick={() => {
-                        setAvisDetail(a);
-                        setDetailModalOuvert(true);
-                      }}
-                      className="gp-action-icon gp-view mr-2"
-                      title="Voir le détail"
-                    >
-                      <FaEye size={16} />
-                    </button>
-                  
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+  {isLoading ? (
+    <tr>
+      <td colSpan="5" className="text-center py-4">
+        <div className="flex justify-center items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2">Chargement en cours...</span>
+        </div>
+      </td>
+    </tr>
+  ) : isError ? (
+    <tr>
+      <td colSpan="5" className="text-center py-4 text-red-500">
+        ❌ Erreur lors du chargement des avis
+      </td>
+    </tr>
+  ) : filteredAvis.length === 0 ? (
+    <tr>
+      <td colSpan="5" className="text-center py-4 text-gray-500">
+        Aucun avis trouvé
+      </td>
+    </tr>
+  ) : (
+    filteredAvis.map((a) => (
+      <tr 
+        key={a.id} 
+        className={`border-t ${
+          color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"
+        } transition-colors`}
+      >
+        <td className="px-6 py-4 font-mono text-sm">{a.ticket}</td>
+        <td className="px-6 py-4">{a.nom || "-"}</td>
+        <td className="px-6 py-4">{a.prenom || "-"}</td>
+        <td className="px-6 py-4">
+          <div className="comment-snippet">
+            {a.commentaire}
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="flex">
+            <button
+              onClick={() => {
+                setAvisDetail(a);
+                setDetailModalOuvert(true);
+              }}
+              className="gp-action-icon gp-view mr-2"
+              title="Voir le détail"
+            >
+              <FaEye size={16} />
+            </button>
+         
+          </div>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
         </table>
       </div>
 
       {/* Modal Détail Avis */}
       {detailModalOuvert && (
         <div className="gp-modal-overlay">
-          <div className="gp-modal-container">
-            <div className="gp-modal-header">
-              <h2 className="text-xl font-bold">Détail de l'avis</h2>
-              <button onClick={() => setDetailModalOuvert(false)}>
-                <X size={24} />
-              </button>
-            </div>
+          <div className="gp-modal-container p-6 bg-white rounded-2xl shadow-2xl max-w-md mx-auto mt-8">
+  <div className="flex justify-between items-center border-b pb-4 mb-6">
+    <h2 className="text-2xl font-semibold text-gray-800">📝 Détail de l'avis</h2>
+    <button onClick={() => setDetailModalOuvert(false)} className="text-gray-500 hover:text-red-500 transition">
+      <X size={24} />
+    </button>
+  </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block font-semibold">ID Ticket</label>
-                <p className="mt-1">{avisDetail?.ticketId}</p>
-              </div>
+  <div className="space-y-4 text-[15px] text-gray-800">
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <label className="text-sm text-gray-500 font-medium block">ID Ticket</label>
+      <p className="mt-1 font-semibold">{avisDetail?.ticket}</p>
+    </div>
+    <br></br>
 
-              <div>
-                <label className="block font-semibold">Client</label>
-                <p className="mt-1">{avisDetail?.nom} {avisDetail?.prenom}</p>
-              </div>
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <label className="text-sm text-gray-500 font-medium block">Client</label>
+      <p className="mt-1 font-semibold">{avisDetail?.nom} {avisDetail?.prenom}</p>
+    </div>
+    <br></br>
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <label className="text-sm text-gray-500 font-medium block">Commentaire complet</label>
+      <p className="mt-2 whitespace-pre-wrap text-gray-700 leading-relaxed">{avisDetail?.commentaire}</p>
+    </div>
+  </div>
+</div>
 
-              <div>
-                <label className="block font-semibold">Commentaire complet</label>
-                <p className="mt-1 whitespace-pre-wrap">{avisDetail?.commentaire}</p>
-              </div>
-
-              <div className="flex justify-end mt-4">
-                <button 
-                  onClick={() => setDetailModalOuvert(false)} 
-                  className="gp-btn gp-btn-cancel"
-                >
-                  Fermer
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
-     
+      {/* Modal Suppression */}
+   
     </div>
   );
 }

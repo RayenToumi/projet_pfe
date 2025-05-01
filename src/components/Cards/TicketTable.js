@@ -10,6 +10,7 @@ export default function TicketTable({ color }) {
   const [filterType, setFilterType] = useState("");
   const [filterId, setFilterId] = useState("");
   const [error, setError] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // États création
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -214,6 +215,8 @@ export default function TicketTable({ color }) {
       await axios.delete(`/deleteticket/${ticketToDelete}`);
       setItems(prev => prev.filter(item => item.id !== ticketToDelete));
       setDeleteModalOuvert(false);
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
     } catch (error) {
       console.error("Erreur de suppression:", error.response?.data);
     }
@@ -376,6 +379,31 @@ export default function TicketTable({ color }) {
           gap: 1rem;
           margin-top: 2rem;
         }
+          .animate-fade-in-out {
+  animation: fadeInUp 0.5s ease-out, fadeOutDown 0.5s ease-out 2.5s forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+}
       `}</style>
 
       <div className="px-6 pt-6 border-b-2 border-gray-300">
@@ -767,6 +795,23 @@ export default function TicketTable({ color }) {
           </div>
         </div>
       )}
+      {showSuccessMessage && (
+  <div className="fixed top-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-md shadow-md border-l-4 animate-fade-in-out"
+       style={{ backgroundColor: "#88d1a2", color: "white", borderLeftColor: "#86efac", zIndex: 1000 }}>
+    <div className="flex items-center gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" 
+           width="24" height="24" viewBox="0 0 24 24" 
+           fill="none" 
+           stroke="white" 
+           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+           className="lucide lucide-check-circle">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <span className="font-medium">Ticket supprimé avec succès</span>
+    </div>
+  </div>
+)}
     </div>
   );
 }

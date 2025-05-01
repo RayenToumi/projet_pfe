@@ -9,7 +9,7 @@ function MyTickets() {
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchId, setSearchId] = useState("");
-  const [feedback, setFeedback] = useState({ note: "", commentaire: "" });
+  const [feedback, setFeedback] = useState({  commentaire: "" });
   const [submitted, setSubmitted] = useState(false);
 
   const getShortCode = (id) => {
@@ -23,10 +23,42 @@ function MyTickets() {
       ticketId: selectedTicket._id,
       ...feedback,
     });
-
-    // TODO: envoyer au backend
-    setSubmitted(true);
+  
+    try {
+      // Récupérer le token JWT et l'ID de l'utilisateur si nécessaire
+      const token = localStorage.getItem('jwt_token');
+  
+      // Faire la requête POST vers votre API pour ajouter le commentaire
+      const response = await fetch('/addcom', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ticketId: selectedTicket._id,  // Passer l'ID du ticket ici
+          commentaire: feedback.commentaire,  // Passer le commentaire
+        }),
+      });
+  
+      if (response.ok) {
+        // Si la requête réussit, mettre à jour l'état
+        setSubmitted(true);
+        setFeedback({ commentaire: "" });  // Réinitialiser le champ commentaire
+       
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur : ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du commentaire :", error);
+      alert("Une erreur est survenue lors de l'envoi de votre commentaire.");
+    }
   };
+  
+  
+
+    
 
   useEffect(() => {
     document.body.style.margin = "0";
@@ -142,7 +174,8 @@ function MyTickets() {
                   onClick={() => {
                     setSelectedTicket(ticket);
                     setSubmitted(false);
-                    setFeedback({ note: "", commentaire: "" });
+                    setFeedback({ 
+                       commentaire: "" });
                   }}
                 >
                   <div style={ticketHeader}>
@@ -211,32 +244,7 @@ function MyTickets() {
                         <p style={{ color: "green" }}>Merci pour votre retour !</p>
                       ) : (
                         <>
-                          <div style={{ marginBottom: "1rem" }}>
-                            <label
-                              style={{
-                                fontWeight: "bold",
-                                display: "block",
-                                marginBottom: "0.5rem",
-                              }}
-                            >
-                              Note (1 à 5) :
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="5"
-                              value={feedback.note}
-                              onChange={(e) =>
-                                setFeedback({ ...feedback, note: e.target.value })
-                              }
-                              style={{
-                                padding: "0.4rem",
-                                border: "1px solid #ccc",
-                                borderRadius: "4px",
-                                width: "60px",
-                              }}
-                            />
-                          </div>
+                          
 
                           <div style={{ marginBottom: "1rem" }}>
                             <label

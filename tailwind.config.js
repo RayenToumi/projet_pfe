@@ -25,6 +25,7 @@ module.exports = {
     extend: {
       minHeight: {
         "screen-75": "75vh",
+        
       },
       fontSize: {
         55: "55rem",

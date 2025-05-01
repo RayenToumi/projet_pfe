@@ -8,6 +8,9 @@ export default function CardTable({ color }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterId, setFilterId] = useState("");
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+const [successMessage, setSuccessMessage] = useState('');
+
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -46,9 +49,18 @@ export default function CardTable({ color }) {
       } catch (error) {
         console.error("Erreur lors du chargement des utilisateurs:", error);
       }
+      
     };
     fetchUsers();
   }, []);
+  useEffect(() => {
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage]);
 
   const handleChange = (e) => {
     setNewUser({ ...newUser, [e.target.name]: e.target.value });
@@ -79,6 +91,8 @@ export default function CardTable({ color }) {
 
   const handleCreateSubmit = async () => {
     const errors = validateForm(newUser);
+    setSuccessMessage('Utilisateur ajouté avec succès');
+setShowSuccessMessage(true);
     if (Object.keys(errors).length > 0) return setErrors(errors);
 
     try {
@@ -124,6 +138,9 @@ export default function CardTable({ color }) {
 
   const handleEditSubmit = async () => {
     const errors = validateEditForm(editingUser);
+    setSuccessMessage('Utilisateur modifié avec succès');
+setShowSuccessMessage(true);
+
     if (Object.keys(errors).length > 0) return setEditErrors(errors);
 
     try {
@@ -160,6 +177,8 @@ export default function CardTable({ color }) {
   };
 
   const confirmDelete = async () => {
+    setSuccessMessage('Utilisateur supprimé avec succès');
+setShowSuccessMessage(true);
     
     try {
       const response = await fetch(`/deleteuser/${userIdToDelete}`, {
@@ -331,6 +350,33 @@ export default function CardTable({ color }) {
           gap: 1rem;
           margin-top: 2rem;
         }
+      .animate-fade-in-out {
+    animation: fadeInUp 0.5s ease-out, fadeOutDown 0.5s ease-out 2.5s forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translate(-100%, -20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  @keyframes fadeOutDown {
+    from {
+      opacity: 1;
+      transform: translate(50%, 0);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, 20px);
+    }
+  }
+
+
       `}</style>
 
       <div className="px-6 pt-6 border-b-2 border-gray-300">
@@ -705,6 +751,32 @@ export default function CardTable({ color }) {
     </div>
   </div>
 )}
+{showSuccessMessage && (
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-md shadow-md border-l-4 animate-fade-in-out"
+    style={{ 
+      backgroundColor: "#88d1a2", 
+      color: "white", 
+      borderLeftColor: "#86efac"
+     // Positionnement horizontal fixe
+      
+    }}>
+ <div className="flex items-center gap-3">
+   <svg xmlns="http://www.w3.org/2000/svg" 
+        width="24" height="24" viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="white" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        className="lucide lucide-check-circle">
+     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+     <polyline points="22 4 12 14.01 9 11.01"/>
+   </svg>
+   <span className="font-medium">Ticket supprimé avec succès</span>
+ </div>
+</div>
+    )}
+
     </div>
   );
 }

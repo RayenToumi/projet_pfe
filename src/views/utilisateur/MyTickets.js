@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 
+
 function MyTickets() {
   
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchId, setSearchId] = useState("");
-  const [feedback, setFeedback] = useState({ commentaire: "" });
-
+  const [feedback, setFeedback] = useState({  commentaire: "" });
   const [submitted, setSubmitted] = useState(false);
 
   const getShortCode = (id) => {
@@ -21,13 +21,44 @@ function MyTickets() {
   const handleSubmitFeedback = async () => {
     console.log("Feedback soumis :", {
       ticketId: selectedTicket._id,
-      commentaire: feedback.commentaire,
+      ...feedback,
     });
-    
-
-    // TODO: envoyer au backend
-    setSubmitted(true);
+  
+    try {
+      // Récupérer le token JWT et l'ID de l'utilisateur si nécessaire
+      const token = localStorage.getItem('jwt_token');
+  
+      // Faire la requête POST vers votre API pour ajouter le commentaire
+      const response = await fetch('/addcom', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ticketId: selectedTicket._id,  // Passer l'ID du ticket ici
+          commentaire: feedback.commentaire,  // Passer le commentaire
+        }),
+      });
+  
+      if (response.ok) {
+        // Si la requête réussit, mettre à jour l'état
+        setSubmitted(true);
+        setFeedback({ commentaire: "" });  // Réinitialiser le champ commentaire
+       
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur : ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du commentaire :", error);
+      alert("Une erreur est survenue lors de l'envoi de votre commentaire.");
+    }
   };
+  
+  
+
+    
 
   useEffect(() => {
     document.body.style.margin = "0";
@@ -110,7 +141,7 @@ function MyTickets() {
 
   return (
     <>
-   
+      
       <div style={container}>
         <div style={contentWrapper}>
          
@@ -143,7 +174,8 @@ function MyTickets() {
                   onClick={() => {
                     setSelectedTicket(ticket);
                     setSubmitted(false);
-                    setFeedback({ note: "", commentaire: "" });
+                    setFeedback({ 
+                       commentaire: "" });
                   }}
                 >
                   <div style={ticketHeader}>
@@ -191,78 +223,79 @@ function MyTickets() {
 
                   {/* Évaluation si ticket fermé */}
                   {selectedTicket.statut?.toLowerCase() === "fermé" && (
-  <div
-    style={{
-      marginTop: "2rem",
-      borderTop: "1px solid #ddd",
-      paddingTop: "1rem",
-    }}
-  >
-    <h4
-      style={{
-        fontSize: "1.1rem",
-        marginBottom: "0.5rem",
-        color: "#1a237e",
-      }}
-    >
-      Évaluez l’intervention :
-    </h4>
+                    <div
+                      style={{
+                        marginTop: "2rem",
+                        borderTop: "1px solid #ddd",
+                        paddingTop: "1rem",
+                      }}
+                    >
+                      <h4
+                        style={{
+                          fontSize: "1.1rem",
+                          marginBottom: "0.5rem",
+                          color: "#1a237e",
+                        }}
+                      >
+                        Évaluez l’intervention :
+                      </h4>
 
-    {submitted ? (
-      <p style={{ color: "green" }}>Merci pour votre retour !</p>
-    ) : (
-      <>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            style={{
-              fontWeight: "bold",
-              display: "block",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Commentaire :
-          </label>
-          <textarea
-            rows="3"
-            value={feedback.commentaire}
-            onChange={(e) =>
-              setFeedback({ ...feedback, commentaire: e.target.value })
-            }
-            style={{
-              width: "100%",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              padding: "0.5rem",
-              resize: "vertical",
-            }}
-          />
-        </div>
+                      {submitted ? (
+                        <p style={{ color: "green" }}>Merci pour votre retour !</p>
+                      ) : (
+                        <>
+                          
 
-        <button
-          onClick={handleSubmitFeedback}
-          style={{
-            backgroundColor: "#1a237e",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            padding: "0.5rem 1rem",
-            cursor: "pointer",
-          }}
-        >
-          Envoyer
-        </button>
-      </>
-    )}
-  </div>
-)}
+                          <div style={{ marginBottom: "1rem" }}>
+                            <label
+                              style={{
+                                fontWeight: "bold",
+                                display: "block",
+                                marginBottom: "0.5rem",
+                              }}
+                            >
+                              Commentaire :
+                            </label>
+                            <textarea
+                              rows="3"
+                              value={feedback.commentaire}
+                              onChange={(e) =>
+                                setFeedback({ ...feedback, commentaire: e.target.value })
+                              }
+                              style={{
+                                width: "100%",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                padding: "0.5rem",
+                                resize: "vertical",
+                              }}
+                            />
+                          </div>
 
+                          <button
+                            onClick={handleSubmitFeedback}
+                            style={{
+                              backgroundColor: "#1a237e",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "0.5rem 1rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Envoyer
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
-      
+
     </>
   );
 }
