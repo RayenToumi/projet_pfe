@@ -112,11 +112,7 @@ function MyTickets() {
       <IndexNavbar />
       <div style={container}>
         <div style={contentWrapper}>
-          <img
-            src="/images/support-banner.jpg"
-            alt="Bannière Support"
-            style={bannerImage}
-          />
+         
           <h1 style={title}>Espace Support Client</h1>
           <p style={subtitle}>Consultez vos tickets et suivez leur avancement</p>
 
@@ -309,14 +305,7 @@ const container = {
 };
 
 const contentWrapper = { width: "100%", maxWidth: "800px" };
-const bannerImage = {
-  width: "100%",
-  maxHeight: "200px",
-  borderRadius: "12px",
-  objectFit: "cover",
-  marginBottom: "1rem",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-};
+
 const title = {
   color: "#1a237e",
   fontSize: "2.5rem",

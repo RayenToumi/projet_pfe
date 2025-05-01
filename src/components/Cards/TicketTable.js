@@ -9,6 +9,7 @@ export default function TicketTable({ color }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterId, setFilterId] = useState("");
+  const [error, setError] = useState(null);
 
   // États création
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -109,15 +110,27 @@ export default function TicketTable({ color }) {
   const handleCreateSubmit = async () => {
     const errors = validateForm(newTicket);
     if (Object.keys(errors).length > 0) return setErrors(errors);
-
+  
     try {
+      // Récupération du token JWT
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+  
+      // Création du ticket avec authentification
       const response = await axios.post('/addticket', {
         sujet: newTicket.subject,
         type: newTicket.type,
         urgence: newTicket.urgency,
         description: newTicket.description
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
-
+  
+      // Mise à jour optimiste UI
       setItems(prev => [...prev, {
         id: response.data._id,
         subject: response.data.sujet,
@@ -127,12 +140,43 @@ export default function TicketTable({ color }) {
         status: 'Ouvert',
         date: new Date(response.data.date).toLocaleDateString('fr-FR')
       }]);
-      
+  
+      // Fermeture modal et reset form
       setModalOuvert(false);
       setNewTicket({ subject: "", type: "", urgency: "", description: "" });
-
+  
+      // Sauvegarde locale fallback
+      const offlineTicket = {
+        ...newTicket,
+        id: response.data._id,
+        date: new Date().toLocaleDateString('fr-FR'),
+        statut: 'Ouvert'
+      };
+      
+      const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+      localStorage.setItem("tickets", JSON.stringify([...storedTickets, offlineTicket]));
+  
     } catch (error) {
-      console.error('Erreur création:', error.response?.data);
+      console.error('Erreur création:', error);
+      
+      // Gestion erreur réseau/hors ligne
+      if (!navigator.onLine || error.response?.status === 401) {
+        const offlineTicket = {
+          ...newTicket,
+          id: `offline-${Date.now()}`,
+          date: new Date().toLocaleDateString('fr-FR'),
+          statut: 'En attente de synchronisation'
+        };
+  
+        const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
+        localStorage.setItem("tickets", JSON.stringify([...storedTickets, offlineTicket]));
+  
+        setError(`Erreur réseau - Ticket sauvegardé localement`);
+      } else if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        setError(error.message);
+      }
     }
   };
 
