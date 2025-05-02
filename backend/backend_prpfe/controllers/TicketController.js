@@ -1,4 +1,5 @@
 const TicketModel = require('../models/TicketSchema');
+const UserModel = require('../models/UserSchema');
 const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -47,7 +48,38 @@ module.exports.addTicket = async (req, res) => {
 };
 module.exports.getAlltickets = async (req, res) => {
   try {
-    const ticketlist = await TicketModel.find()
+    const { role, specialite } = req.user;
+    console.log("DEBUG USER:", req.user); // <— pour vérifier que specialite est présent
+
+    let query = {};
+
+    if (role === 'technicien') {
+      if (!specialite) {
+        return res.status(400).json({ error: "Technicien sans spécialité définie." });
+      }
+
+      const mapping = {
+        IT: 'Informatique',
+        NET: 'reseaux',
+        DAB: 'DAB',
+        SC: 'support'
+      };
+
+      // Types de tickets compatibles avec la spécialité
+      const typesCompatibles = Object
+        .entries(mapping)
+        .filter(([code, libelle]) => libelle.toLowerCase() === specialite.toLowerCase())
+        .map(([code]) => code);
+
+      if (typesCompatibles.length === 0) {
+        // Aucun type compatible
+        return res.status(200).json([]);
+      }
+
+      query.type = { $in: typesCompatibles };
+    }
+
+    const ticketlist = await TicketModel.find(query)
       .populate({
         path: 'user',
         select: 'nom prenom email'
@@ -55,15 +87,14 @@ module.exports.getAlltickets = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const formattedTickets = ticketlist.map(ticket => {
-      // Gestion explicite des utilisateurs manquants
-      const createur = ticket.user 
-        ? { 
-            surnom: `${ticket.user.nom} ${ticket.user.prenom}`, 
-            email: ticket.user.email 
+      const createur = ticket.user
+        ? {
+            surnom: `${ticket.user.nom} ${ticket.user.prenom}`,
+            email: ticket.user.email
           }
-        : { 
-            surnom: "Utilisateur supprimé", 
-            email: "N/A" 
+        : {
+            surnom: "Utilisateur supprimé",
+            email: "N/A"
           };
 
       return {
@@ -76,11 +107,12 @@ module.exports.getAlltickets = async (req, res) => {
 
     res.status(200).json(formattedTickets);
   } catch (error) {
-    res.status(500).json({ 
-      error: error.message 
-    });
+    console.error("Erreur dans getAlltickets :", error);
+    res.status(500).json({ error: error.message });
   }
 };
+
+
   module.exports.deleteTicket = async (req, res) => {
     try {
       const ticketId = req.params.id;
@@ -103,17 +135,32 @@ module.exports.getAlltickets = async (req, res) => {
       const ticketId = req.params.id;
       const updates = req.body;
   
-      // Récupère le ticket avec les informations utilisateur
+      if (!req.user || !req.user.surnom) {
+        return res.status(400).json({ error: "Technicien non authentifié ou surnom manquant" });
+      }
+      if (updates.statut && (updates.statut === 'en cours' || updates.statut === 'fermé')) {
+        updates.technicien = `${req.user.nom} ${req.user.prenom}`; // Ancien format
+        updates.technicienId = req.user.id; // Nouveau format
+      }
+  
+     
+  
+      const surnomTechnicien = req.user.surnom;
+  
+      // Ajouter automatiquement le technicien si le statut change vers en cours ou fermé
+      if (updates.statut && (updates.statut === 'en cours' || updates.statut === 'fermé')) {
+        updates.technicien = surnomTechnicien;
+      }
+  
       const updatedTicket = await TicketModel.findByIdAndUpdate(ticketId, updates, {
         new: true,
         runValidators: true
-      }).populate('user', 'email'); // Ajout de populate pour récupérer l'email
+      }).populate('user', 'email');
   
       if (!updatedTicket) {
         return res.status(404).json({ message: "Ticket non trouvé" });
       }
   
-      // Envoi d'email si le statut est 'fermé'
       if (updatedTicket.statut.toLowerCase() === 'fermé') {
         const mailOptions = {
           from: process.env.EMAIL_USER,
@@ -191,6 +238,7 @@ module.exports.getAlltickets = async (req, res) => {
       });
     }
   };
+  
   module.exports.getTicketsByUser = async (req, res) => {
     try {
       const { userId } = req.params;
@@ -211,4 +259,95 @@ module.exports.getAlltickets = async (req, res) => {
       });
     }
   };
+  module.exports.getTechnicianTickets = async (req, res) => {
+    try {
+      const userId = req.user.id;
   
+      const tickets = await TicketModel.find({
+        technicienId: userId, // Recherche par le nouvel ID
+        statut: { $in: ['en cours', 'fermé'] }
+      })
+      .populate({
+        path: 'user',
+        select: 'nom prenom email'
+      })
+      .populate({
+        path: 'technicienId',
+        select: 'nom prenom'
+      })
+      .sort({ datePrise: -1 });
+  
+      if(tickets.length === 0) {
+        return res.status(404).json({
+          message: "Aucun ticket trouvé pour ce technicien"
+        });
+      }
+  
+      const formattedTickets = tickets.map(ticket => ({
+        _id: ticket._id,
+        sujet: ticket.sujet,
+        type: ticket.type,
+        urgence: ticket.urgence,
+        description: ticket.description,
+        createur: {
+          surnom: ticket.user ? `${ticket.user.nom} ${ticket.user.prenom}` : "Utilisateur supprimé",
+          email: ticket.user?.email || "N/A"
+        },
+        technicien: ticket.technicienId ? 
+          `${ticket.technicienId.nom} ${ticket.technicienId.prenom}` : 
+          ticket.technicien || "Non assigné",
+        date: new Date(ticket.date).toLocaleDateString('fr-FR'),
+        statut: ticket.statut.charAt(0).toUpperCase() + ticket.statut.slice(1),
+        datePrise: ticket.datePrise ? new Date(ticket.datePrise).toLocaleString('fr-FR') : null
+      }));
+  
+      res.status(200).json(formattedTickets);
+  
+    } catch (error) {
+      res.status(500).json({
+        error: "Erreur de récupération des tickets",
+        details: error.message
+      });
+    }
+  };
+  module.exports.getTechnicianScores = async (req, res) => {
+    try {
+      // Vérifie que l'utilisateur est admin
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+  
+      // Récupère tous les techniciens
+      const technicians = await UserModel.find({ role: 'technicien' });
+  
+      // Pour chaque technicien, calcule le score
+      const result = await Promise.all(technicians.map(async (tech) => {
+        const tickets = await TicketModel.find({
+          technicienId: tech._id,
+          statut: { $in: ['en cours', 'fermé'] }
+        });
+  
+        const closedCount = tickets.filter(t => t.statut === 'fermé').length;
+        const inProgressCount = tickets.filter(t => t.statut === 'en cours').length;
+  
+        const score = closedCount / (inProgressCount + 1);
+  
+        return {
+          id: tech._id,
+          nom: tech.nom,
+          prenom: tech.prenom,
+          specialite: tech.specialite,
+          statut: tech.statut,
+          score: `${(score * 100).toFixed(1).replace(/\.0$/, '')}%`  // Formattage des scores
+        };
+      }));
+  
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur serveur", error: error.message });
+    }
+  };
+  
+  
+  
+

@@ -13,6 +13,7 @@ import Ticket from "views/technicien/Ticket";
 import Calender from "views/technicien/Calender";
 import Dashboard from "views/technicien/Dashboard";
 import Commentaire from "views/technicien/Commentaire";
+import mestickets from "views/technicien/MesTickets";
 
 
 export default function Technicien() {
@@ -30,6 +31,7 @@ export default function Technicien() {
             <Route path="/technicien/calender" exact component={Calender} />
             <Route path="/technicien/dashboard" exact component={Dashboard} />
             <Route path="/technicien/commentaire" exact component={Commentaire} />
+            <Route path="/technicien/mestickets" exact component={mestickets} />
             <Redirect from="/technicien" to="/technicien/ticket" />
           </Switch>
           <FooterAdmin />

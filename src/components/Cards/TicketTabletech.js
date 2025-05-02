@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
-import { FaFilter, FaEdit, FaTrash, FaEye } from "react-icons/fa";
+import { FaFilter, FaEye, FaCheck, FaCheckDouble } from "react-icons/fa";
 import { X } from "lucide-react";
 
-export default function TicketTable({ color }) {
+export default function TicketTabletech({ color }) {
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -23,14 +23,63 @@ export default function TicketTable({ color }) {
   const [errors, setErrors] = useState({});
 
   // États édition
-  const [editModalOuvert, setEditModalOuvert] = useState(false);
-  const [editingTicket, setEditingTicket] = useState(null);
+
+
   const [editErrors, setEditErrors] = useState({});
 
   // États suppression
-  const [deleteModalOuvert, setDeleteModalOuvert] = useState(false);
-  const [ticketToDelete, setTicketToDelete] = useState(null);
 
+
+  const handleTakeTicket = async (id) => {
+    try {
+      const token = localStorage.getItem("jwt_token");
+      await axios.put(
+        `/updateticket/${id}`,
+        { statut: "en cours" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === id ? {
+            ...item,
+            statut: "en cours",
+            status: "En cours"
+          } : item
+        )
+      );
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    } catch (error) {
+      console.error("Erreur de prise de ticket:", error);
+    }
+  };
+  
+  const handleConfirmTicket = async (id) => {
+    try {
+      const token = localStorage.getItem("jwt_token");
+      await axios.put(
+        `/updateticket/${id}`,
+        { statut: "fermé" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === id ? {
+            ...item,
+            statut: "fermé",
+            status: "Fermé"
+          } : item
+        )
+      );
+  
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    } catch (error) {
+      console.error("Erreur de confirmation:", error);
+    }
+  };
   // États détails
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -40,11 +89,11 @@ export default function TicketTable({ color }) {
       try {
         const token = localStorage.getItem('jwt_token');
 
-        const { data } = await axios.get('/alltickets', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+const { data } = await axios.get('/alltickets', {
+  headers: {
+    Authorization: `Bearer ${token}`
+  }
+});
         const formatted = data.map(t => {
           // Corrigez le format de date ici
           const [day, month, year] = t.date.split('/');
@@ -54,12 +103,7 @@ export default function TicketTable({ color }) {
             id: t._id,
             surnom: t.createur?.surnom || 'Anonyme',
             email: t.createur?.email || 'N/A',
-            technicien: t.technicien || 'Non assigné',
-            datePriseEnCharge: new Date(t.updatedAt).toLocaleDateString('fr-FR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            }),
+         
           
             urgency: t.urgence,
             
@@ -82,44 +126,33 @@ export default function TicketTable({ color }) {
       }
     };
     fetchTickets();
-  }, [modalOuvert, editModalOuvert, deleteModalOuvert]);
+  }, [modalOuvert]);
 
   const handleChange = (e) => {
     setNewTicket({ ...newTicket, [e.target.name]: e.target.value });
   };
 
-  const handleEditChange = (e) => {
-    setEditingTicket({ ...editingTicket, [e.target.name]: e.target.value });
-  };
 
-  const validateForm = (ticket, isEdit = false) => {
+
+  const validateForm = (ticket) => { // Retirer le paramètre isEdit
     const errors = {};
     
-    // Validation du sujet
     if (!ticket.subject?.trim()) {
       errors.subject = "Le sujet est requis.";
     }
-  
-    // Validation du type
+    
     if (!ticket.type) {
       errors.type = "Le type est requis.";
     }
-  
-    // Validation de l'urgence (uniquement à la création)
-    if (!isEdit && !ticket.urgency) {
+    
+    if (!ticket.urgency) {
       errors.urgency = "L'urgence est requise.";
     }
-  
-    // Validation de la description
+    
     if (!ticket.description?.trim()) {
       errors.description = "La description est requise.";
     }
-  
-    // Validation du statut (uniquement en édition)
-    if (isEdit && !ticket.statut) {
-      errors.statut = "Le statut est requis.";
-    }
-  
+    
     return errors;
   };
 
@@ -196,50 +229,7 @@ export default function TicketTable({ color }) {
     }
   };
 
-  const handleEditSubmit = async () => {
-    const errors = validateForm(editingTicket, true);
-    if (Object.keys(errors).length > 0) return setEditErrors(errors);
-  
-    try {
-      const token = localStorage.getItem("jwt_token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-  
-      const updateData = {
-        sujet: editingTicket.subject,
-        type: editingTicket.type,
-        urgence: editingTicket.urgency,
-        description: editingTicket.description,
-        statut: editingTicket.statut
-      };
-  
-      await axios.put(`/updateticket/${editingTicket.id}`, updateData, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-  
-      setEditModalOuvert(false);
-      
-    } catch (error) {
-      console.error("Erreur de mise à jour:", error.response?.data);
-      if (error.response?.data?.errors) {
-        setEditErrors(error.response.data.errors);
-      }
-    }
-  };
-  const confirmDelete = async () => {
-    try {
-      await axios.delete(`/deleteticket/${ticketToDelete}`);
-      setItems(prev => prev.filter(item => item.id !== ticketToDelete));
-      setDeleteModalOuvert(false);
-      setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000);
-    } catch (error) {
-      console.error("Erreur de suppression:", error.response?.data);
-    }
-  };
+
 
   const filteredItems = items.filter(item => {
     const matchesId = filterId ? item.id.toString().includes(filterId) : true;
@@ -393,7 +383,23 @@ export default function TicketTable({ color }) {
           gap: 1rem;
           margin-top: 2rem;
         }
-          .animate-fade-in-out {
+      
+.gp-take {
+  background-color:rgb(238, 230, 171);
+  color:rgb(255, 176, 7);
+}
+.gp-take:hover {
+  background-color:rgb(255, 225, 0);
+}
+
+.gp-confirm {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+.gp-confirm:hover {
+  background-color: #bbf7d0;
+}
+    .animate-fade-in-out {
   animation: fadeInUp 0.5s ease-out, fadeOutDown 0.5s ease-out 2.5s forwards;
 }
 
@@ -417,7 +423,6 @@ export default function TicketTable({ color }) {
     opacity: 0;
     transform: translate(-50%, 20px);
   }
-}
       `}</style>
 
       <div className="px-6 pt-6 border-b-2 border-gray-300">
@@ -432,7 +437,7 @@ export default function TicketTable({ color }) {
         <input
           type="text"
       
-         placeholder="🔍 Rechercher par ID"
+          placeholder="🔍 Rechercher par ID"
          value={filterId}
          onChange={(e) => setFilterId(e.target.value)}
           className="w-full sm:w-64 px-4 py-2 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
@@ -491,39 +496,33 @@ export default function TicketTable({ color }) {
       
       {/* Colonne Actions - Totalement intacte */}
       <td className="px-6 py-4">
-        <div className="flex" style={{ gap: "8px" }}>
-          <button
-            onClick={() => {
-              setSelectedTicket(item);
-              setDetailsModalOpen(true);
-            }}
-            className="gp-action-icon gp-view"
-            title="Voir les détails"
-          >
-            <FaEye size={16} />
-          </button>
-          <button
-            onClick={() => {
-              setEditingTicket(item);
-              setEditModalOuvert(true);
-            }}
-            className="gp-action-icon gp-edit"
-            title="Modifier"
-          >
-            <FaEdit size={16} />
-          </button>
-          <button
-            onClick={() => {
-              setTicketToDelete(item.id);
-              setDeleteModalOuvert(true);
-            }}
-            className="gp-action-icon gp-delete"
-            title="Supprimer"
-          >
-            <FaTrash size={16} />
-          </button>
-        </div>
-      </td>
+  <div className="flex" style={{ gap: "8px" }}>
+    <button
+      onClick={() => {
+        setSelectedTicket(item);
+        setDetailsModalOpen(true);
+      }}
+      className="gp-action-icon gp-view"
+      title="Voir les détails"
+    >
+      <FaEye size={16} />
+    </button>
+    <button
+      onClick={() => handleTakeTicket(item.id)}
+      className="gp-action-icon gp-take"
+      title="Prendre le ticket"
+    >
+      <FaCheck size={16} />
+    </button>
+    <button
+      onClick={() => handleConfirmTicket(item.id)}
+      className="gp-action-icon gp-confirm"
+      title="Confirmer la résolution"
+    >
+      <FaCheckDouble size={16} />
+    </button>
+  </div>
+</td>
     </tr>
   ))}
 </tbody>
@@ -639,8 +638,7 @@ export default function TicketTable({ color }) {
       { label: ' Statut', value: selectedTicket.status },
       { label: 'Date', value: selectedTicket.date },
       { label: ' Description', value: selectedTicket.description, isMultiline: true },
-      { label: ' technicien',value: selectedTicket.technicien},
-      { label: ' date de prise en charge' ,value: selectedTicket.datePriseEnCharge}
+ 
     ].map((item, index) => (
       <div
         key={index}
@@ -658,159 +656,8 @@ export default function TicketTable({ color }) {
         </div>
       )}
 
-      {/* Modal Édition */}
-      {editModalOuvert && editingTicket && (
-        <div className="gp-modal-overlay">
-          <div className="gp-modal-container">
-            <div className="gp-modal-header">
-              <h2 className="text-xl font-bold">Modifier le ticket</h2>
-              <button onClick={() => setEditModalOuvert(false)}>
-                <X size={24} />
-              </button>
-            </div>
 
-            <div>
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">ID</label>
-                <div className="gp-readonly-text">{editingTicket.id}</div>
-              </div>
 
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Sujet</label>
-                <input
-                  type="text"
-                  name="subject"
-                  value={editingTicket.subject}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                />
-                {editErrors.subject && <p className="text-red-500 text-sm">{editErrors.subject}</p>}
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Type</label>
-                <select
-                  name="type"
-                  value={editingTicket.type}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                >
-                  <option value="">-- Sélectionner --</option>
-                  <option value="Informatique">Informatique</option>
-                  <option value="Ressources humaines">Ressources humaines</option>
-                  <option value="Comptabilité">Comptabilité</option>
-                </select>
-                {editErrors.type && <p className="text-red-500 text-sm">{editErrors.type}</p>}
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Urgence</label>
-                <select
-                  name="urgency"
-                  value={editingTicket.urgency}
-                  className="gp-form-input gp-disabled-input"
-                  disabled
-                >
-                  <option value="Urgent">Urgent</option>
-                  <option value="Normal">Normal</option>
-                </select>
-              </div>
-              <div className="gp-form-group">
-  <label className="block font-semibold mb-1">Statut</label>
-  <select
-    name="statut"
-    value={editingTicket.statut}
-    onChange={handleEditChange}
-    className="gp-form-input"
-  >
-    <option value="ouvert">Ouvert</option>
-    <option value="en cours">En cours</option>
-    <option value="fermé">Fermé</option>
-  </select>
-</div>
-
-              
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Description</label>
-                <textarea
-                  name="description"
-                  value={editingTicket.description}
-                  onChange={handleEditChange}
-                  rows={4}
-                  className="gp-form-input"
-                />
-                {editErrors.description && <p className="text-red-500 text-sm">{editErrors.description}</p>}
-              </div>
-
-              <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
-                <button 
-                  onClick={() => setEditModalOuvert(false)} 
-                  className="gp-btn gp-btn-cancel"
-                >
-                  Annuler
-                </button>
-                <button 
-                  onClick={handleEditSubmit}
-                  className="gp-btn gp-btn-save"
-                >
-                  Enregistrer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Suppression */}
-      {deleteModalOuvert && (
-        <div className="gp-modal-overlay">
-          <div className="gp-modal-container">
-            <div className="gp-modal-header">
-              <h2 className="text-xl font-bold">Confirmer la suppression</h2>
-              <button onClick={() => setDeleteModalOuvert(false)}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="gp-delete-modal-content">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-16 w-16 text-red-600 mx-auto mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              
-              <p className="text-lg font-medium">
-                Êtes-vous sûr de vouloir supprimer ce ticket ?
-              </p>
-
-              <div className="gp-delete-buttons">
-                <button
-                  onClick={() => setDeleteModalOuvert(false)}
-                  className="gp-btn gp-btn-cancel"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="gp-btn gp-btn-danger"
-                >
-                  Supprimer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       {showSuccessMessage && (
   <div className="fixed top-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-md shadow-md border-l-4 animate-fade-in-out"
        style={{ backgroundColor: "#88d1a2", color: "white", borderLeftColor: "#86efac", zIndex: 1000 }}>
@@ -824,7 +671,7 @@ export default function TicketTable({ color }) {
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
         <polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
-      <span className="font-medium">Ticket supprimé avec succès</span>
+      <span className="font-medium">Ticket modifier avec succès</span>
     </div>
   </div>
 )}
@@ -832,10 +679,10 @@ export default function TicketTable({ color }) {
   );
 }
 
-TicketTable.defaultProps = {
+TicketTabletech.defaultProps = {
   color: "light",
 };
 
-TicketTable.propTypes = {
+TicketTabletech.propTypes = {
   color: PropTypes.oneOf(["light", "dark"]),
 };

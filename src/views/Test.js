@@ -1,204 +1,310 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import PropTypes from "prop-types";
-import { FaFilter, FaEdit, FaTrash, FaEye } from "react-icons/fa";
+import { FaFilter, FaEdit, FaTrash } from "react-icons/fa";
 import { X } from "lucide-react";
 
-export default function TicketTable({ color }) {
-  const [items, setItems] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterId, setFilterId] = useState("");
+export default function TechnicienTable({ color }) {
+  const [techniciens, setTechniciens] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchTechniciens = async () => {
+      try {
+        const token = localStorage.getItem('jwt_token');
+        
+        // Appel parallèle aux deux endpoints
+        const [usersResponse, scoresResponse] = await Promise.all([
+          fetch('/allusers'), // Sans token
+          fetch('/score', {  // Avec token
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+        ]);
+  
+        if (!usersResponse.ok || !scoresResponse.ok) {
+          throw new Error('Erreur réseau');
+        }
+  
+        const [usersData, scoresData] = await Promise.all([
+          usersResponse.json(),
+          scoresResponse.json()
+        ]);
+  
+        // Fusion des données
+        const techs = usersData
+          .filter(user => user.role === 'technicien')
+          .map(tech => {
+            const scoreInfo = scoresData.find(s => s.id === tech._id) || { score: '0.00' };
+            
+            return {
+              id: tech._id,
+              nom: tech.nom,
+              prenom: tech.prenom,
+              email: tech.email,
+              specialite: tech.specialite,
+              actif: tech.actif,
+              score: scoreInfo.score,
+              password: ''
+            };
+          });
+  
+        setTechniciens(techs);
+        setError(null);
+  
+      } catch (err) {
+        setError(err.message);
+        console.error("Erreur de chargement:", err);
+        
+        // Gestion spécifique des erreurs 401
+        if (err.message.includes('401')) {
+          localStorage.removeItem('jwt_token');
+          // Ajouter une redirection vers /login si nécessaire
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchTechniciens();
+  }, []);
 
-  // États création
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterSpecialite, setFilterSpecialite] = useState("");
+  const [filterId, setFilterId] = useState("");
+  const scoreStyle = (score) => {
+    const numericScore = parseFloat(score);
+  
+    let backgroundColor = '';
+    let icon = '';
+  
+    if (numericScore >= 0.8) {
+      backgroundColor = '#d1fae5'; // vert pâle
+      icon = '✓';
+    } else if (numericScore >= 0.5) {
+      backgroundColor = '#fef3c7'; // jaune pâle
+      icon = '⚠';
+    } else {
+      backgroundColor = '#fee2e2'; // rouge pâle
+      icon = '✕';
+    }
+  
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      padding: '4px 10px',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      backgroundColor,
+      color: '#111',
+      border: '1px solid #ccc'
+    };
+  };
+  
   const [modalOuvert, setModalOuvert] = useState(false);
-  const [newTicket, setNewTicket] = useState({
-    subject: "",
-    type: "",
-    urgency: "",
-    description: "",
+  const [newTechnicien, setNewTechnicien] = useState({
+    nom: "",
+    prenom: "",
+    email: "",
+    telephone: "",
+    role: "technicien",
+    password: "",
+    specialite: "",
+    actif: true // Valeur par défaut
   });
   const [errors, setErrors] = useState({});
 
-  // États édition
   const [editModalOuvert, setEditModalOuvert] = useState(false);
-  const [editingTicket, setEditingTicket] = useState(null);
+  const [editingTechnicien, setEditingTechnicien] = useState(null);
   const [editErrors, setEditErrors] = useState({});
 
-  // États suppression
   const [deleteModalOuvert, setDeleteModalOuvert] = useState(false);
-  const [ticketToDelete, setTicketToDelete] = useState(null);
-
-  // États détails
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState(null);
-
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const { data } = await axios.get('/alltickets');
-        const formatted = data.map(t => {
-          // Corrigez le format de date ici
-          const [day, month, year] = t.date.split('/');
-          const isoDate = `${year}-${month}-${day}`;
-  
-          return {
-            id: t._id,
-            surnom: t.createur?.surnom || 'Anonyme',
-            email: t.createur?.email || 'N/A',
-            urgency: t.urgence,
-            description: t.description,
-            status: t.statut.charAt(0).toUpperCase() + t.statut.slice(1),
-            date: new Date(isoDate).toLocaleDateString('fr-FR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            }),
-            subject: t.sujet,
-            type: t.type,
-            statut: t.statut
-          };
-        });
-        setItems(formatted);
-      } catch (error) {
-        console.error("Erreur chargement:", error.response?.data);
-      }
-    };
-    fetchTickets();
-  }, [modalOuvert, editModalOuvert, deleteModalOuvert]);
+  const [technicienIdToDelete, setTechnicienIdToDelete] = useState(null);
 
   const handleChange = (e) => {
-    setNewTicket({ ...newTicket, [e.target.name]: e.target.value });
+    setNewTechnicien({ ...newTechnicien, [e.target.name]: e.target.value });
   };
 
   const handleEditChange = (e) => {
-    setEditingTicket({ ...editingTicket, [e.target.name]: e.target.value });
+    setEditingTechnicien({ ...editingTechnicien, [e.target.name]: e.target.value });
   };
 
-  const validateForm = (ticket, isEdit = false) => {
+  const validateForm = (technicien) => {
     const errors = {};
-    
-    // Validation du sujet
-    if (!ticket.subject?.trim()) {
-      errors.subject = "Le sujet est requis.";
+    if (!technicien.nom.trim()) errors.nom = "Le nom est requis";
+    if (!technicien.prenom.trim()) errors.prenom = "Le prénom est requis";
+    if (!technicien.email.trim()) errors.email = "L'email est requis";
+    if (!technicien.telephone.trim()) errors.telephone = "Le téléphone est requis";
+    if (!technicien.specialite) errors.specialite = "La spécialité est requise";
+    if (typeof technicien.actif !== 'boolean') {
+      errors.actif = "Statut invalide";
     }
-  
-    // Validation du type
-    if (!ticket.type) {
-      errors.type = "Le type est requis.";
-    }
-  
-    // Validation de l'urgence (uniquement à la création)
-    if (!isEdit && !ticket.urgency) {
-      errors.urgency = "L'urgence est requise.";
-    }
-  
-    // Validation de la description
-    if (!ticket.description?.trim()) {
-      errors.description = "La description est requise.";
-    }
-  
-    // Validation du statut (uniquement en édition)
-    if (isEdit && !ticket.statut) {
-      errors.statut = "Le statut est requis.";
-    }
-  
+    return errors;
+   
+  };
+
+  const validateEditForm = (technicien) => {
+    const errors = {};
+    if (!technicien.nom.trim()) errors.nom = "Le nom est requis";
+    if (!technicien.prenom.trim()) errors.prenom = "Le prénom est requis";
+    if (!technicien.specialite) errors.specialite = "La spécialité est requise";
+    if (!technicien.email.trim()) errors.email = "L'email est requis"; // Nouvelle validation
     return errors;
   };
 
   const handleCreateSubmit = async () => {
-    const errors = validateForm(newTicket);
-    if (Object.keys(errors).length > 0) return setErrors(errors);
-
+    const validationErrors = validateForm(newTechnicien);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+  
     try {
-      const response = await axios.post('/addticket', {
-        sujet: newTicket.subject,
-        type: newTicket.type,
-        urgence: newTicket.urgency,
-        description: newTicket.description
+      const response = await fetch('/adduser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newTechnicien,
+          tel: newTechnicien.telephone, // Correction ici
+          role: 'technicien',
+          password: undefined,
+          telephone: undefined ,
+          actif: newTechnicien.actif 
+          // Supprimer l'ancien champ
+        }),
       });
-
-      setItems(prev => [...prev, {
-        id: response.data._id,
-        subject: response.data.sujet,
-        type: response.data.type,
-        urgency: response.data.urgence,
-        description: response.data.description,
-        status: 'Ouvert',
-        date: new Date(response.data.date).toLocaleDateString('fr-FR')
-      }]);
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de l\'ajout');
+      }
+  
+      const createdTechnicien = await response.json();
       
+      setTechniciens([...techniciens, {
+        id: createdTechnicien._id,
+        nom: createdTechnicien.nom,
+        prenom: createdTechnicien.prenom,
+        specialite: createdTechnicien.specialite,
+      }]);
+  
       setModalOuvert(false);
-      setNewTicket({ subject: "", type: "", urgency: "", description: "" });
-
+      setNewTechnicien({
+        nom: "",
+        prenom: "",
+        email: "",
+        telephone: "",
+        role: "",
+        password: "",
+        specialite: "", // Ajouté
+      });
     } catch (error) {
-      console.error('Erreur création:', error.response?.data);
+      console.error('Erreur:', error);
+      alert(`verifier bien les champs`);
     }
   };
 
   const handleEditSubmit = async () => {
-    // Valider le formulaire avec le mode édition
-    const errors = validateForm(editingTicket, true);
-    if (Object.keys(errors).length > 0) return setEditErrors(errors);
+    const errors = validateEditForm(editingTechnicien);
+    if (Object.keys(errors).length > 0) {
+      setEditErrors(errors);
+      return;
+    }
   
     try {
-      // Préparer les données pour le backend
-      const updateData = {
-        sujet: editingTicket.subject,
-        type: editingTicket.type,
-        urgence: editingTicket.urgency,
-        description: editingTicket.description,
-        statut: editingTicket.statut // Conserver la casse originale du backend
-      };
+      const response = await fetch(`/updateuser/${editingTechnicien.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nom: editingTechnicien.nom,
+          prenom: editingTechnicien.prenom,
+          specialite: editingTechnicien.specialite,
+          password: editingTechnicien.password,
+          actif: editingTechnicien.actif // Ajouter ce champ
+        }),
+      });
   
-      // Envoyer la requête de mise à jour
-      await axios.put(`/updateticket/${editingTicket.id}`, updateData);
-  
-      // Fermer la modal et rafraîchir les données
-      setEditModalOuvert(false);
-      
-    } catch (error) {
-      console.error("Erreur de mise à jour:", error.response?.data);
-      // Gestion des erreurs serveur
-      if (error.response?.data?.errors) {
-        setEditErrors(error.response.data.errors);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la mise à jour');
       }
+  
+      const updatedTechnicien = await response.json();
+      
+      // Mettre à jour l'état avec la nouvelle valeur actif
+      setTechniciens(techniciens.map(tech => 
+        tech.id === updatedTechnicien._id ? {
+          ...tech,
+          ...updatedTechnicien,
+          actif: updatedTechnicien.actif // Assurer la mise à jour du statut
+        } : tech
+      ));
+      
+      setEditModalOuvert(false);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setEditErrors({ general: error.message });
     }
   };
+
   const confirmDelete = async () => {
     try {
-      await axios.delete(`/deleteticket/${ticketToDelete}`);
-      setItems(prev => prev.filter(item => item.id !== ticketToDelete));
+      const response = await fetch(`/deleteuser/${technicienIdToDelete}`, {
+        method: 'DELETE',
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la suppression');
+      }
+  
+      setTechniciens(techniciens.filter(tech => tech.id !== technicienIdToDelete));
       setDeleteModalOuvert(false);
     } catch (error) {
-      console.error("Erreur de suppression:", error.response?.data);
+      console.error('Erreur:', error);
+      alert(error.message);
     }
   };
 
-  const filteredItems = items.filter(item => {
-   
-    const matchesId = filterId ? item.id.toString().includes(filterId) : true;
+  const filteredTechniciens = techniciens.filter(tech => {
+    const matchesId = filterId ? tech.id.toString().includes(filterId) : true;
     const matchesSearch = searchQuery
-    ? item.surnom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchQuery.toLowerCase())
-    : true;
-    const matchesUrgency = filterType ? item.urgency === filterType : true;
+      ? tech.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tech.prenom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tech.specialite.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    const matchesSpecialite = filterSpecialite ? tech.specialite === filterSpecialite : true;
 
-    return matchesId && matchesSearch && matchesUrgency;
+    return matchesId && matchesSearch && matchesSpecialite;
   });
 
-  const badgeStyle = (status) => ({
-    padding: "0.25rem 0.5rem",
-    borderRadius: "9999px",
-    fontSize: "0.75rem",
-    fontWeight: "500",
-    backgroundColor:
-      status === "Ouvert" ? "#fee2e2" :
-      status === "En cours" ? "#ffedd5" : "#dcfce7",
-    color:
-      status === "Ouvert" ? "#dc2626" :
-      status === "En cours" ? "#ea580c" : "#16a34a",
-  });
+  const specialiteStyle = (specialite) => {
+    const style = {
+      padding: "0.25rem 0.5rem",
+      borderRadius: "9999px",
+      fontSize: "0.75rem",
+      fontWeight: "500",
+    };
+  
+    switch(specialite.toLowerCase()) {
+      case "informatique":
+        return { ...style, backgroundColor: "#dbeafe", color: "#1d4ed8" };
+      case "reseaux":
+      case "réseaux": // Gestion des accents
+        return { ...style, backgroundColor: "#dcfce7", color: "#15803d" };
+      case "DAB":
+        return { ...style, backgroundColor: "#fef3c7", color: "#b45309" };
+      case "support":
+      case "support client":
+        return { ...style, backgroundColor: "#f3e8ff", color: "#6b21a8" }; // Nouvelle couleur
+      default:
+        return { ...style, backgroundColor: "#fee2e2", color: "#b91c1c" };
+    }
+  };
 
   return (
     <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
@@ -214,12 +320,11 @@ export default function TicketTable({ color }) {
           align-items: center;
           justify-content: center;
         }
-        .gp-view {
-          background-color: #dbeafe;
-          color: #2563eb;
-        }
-        .gp-view:hover {
-          background-color: #bfdbfe;
+           .gp-delete-buttons {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          margin-top: 2rem;
         }
         .gp-edit {
           background-color: #e0f2fe;
@@ -284,16 +389,6 @@ export default function TicketTable({ color }) {
           border: 1px solid #ccc;
           border-radius: 0.375rem;
         }
-        .gp-disabled-input {
-          background-color: #f3f4f6;
-          cursor: not-allowed;
-        }
-        .gp-readonly-text {
-          padding: 0.5rem;
-          background-color: #f3f4f6;
-          border-radius: 0.375rem;
-          display: block;
-        }
         .gp-btn {
           padding: 0.5rem 1.25rem;
           border-radius: 0.375rem;
@@ -322,33 +417,23 @@ export default function TicketTable({ color }) {
         .gp-btn-danger:hover {
           background-color: #b91c1c;
         }
-        .gp-delete-modal-content {
-          text-align: center;
-          padding: 2rem;
-        }
-        .gp-delete-buttons {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-          margin-top: 2rem;
-        }
+          
       `}</style>
 
       <div className="px-6 pt-6 border-b-2 border-gray-300">
         <h1 className={`text-2xl font-bold text-center ${
           color === "light" ? "text-gray-800" : "text-white"
         }`}>
-          Liste des tickets
+          Gestion des Techniciens
         </h1>
       </div>
 
       <div className="flex justify-between px-6 pt-6 pb-4 items-center gap-4">
         <input
           type="text"
-      
-          placeholder="🔍 Rechercher par surnom ou email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="🔍 Rechercher par ID..."
+          value={filterId}
+          onChange={(e) => setFilterId(e.target.value)}
           className="w-full sm:w-64 px-4 py-2 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
         />
 
@@ -356,101 +441,135 @@ export default function TicketTable({ color }) {
           <FaFilter className="text-gray-700 text-xl mr-2" />
 
           <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="w-50 sm:w-64 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
-          >
-            <option value="">Filtrer par urgence</option>
-            <option value="Urgent">Urgent</option>
-            <option value="Normal">Normal</option>
-          </select>
+  value={filterSpecialite}
+  onChange={(e) => setFilterSpecialite(e.target.value)}
+  className="w-50 sm:w-64 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
+>
+  <option value="">Toutes les spécialités</option>
+  <option value="informatique">Informatique</option>
+  <option value="reseaux">Réseaux</option>
+  <option value="support">Support client</option>
+  <option value="DAB">DAB</option>
+</select>
 
           <button 
             className="gp-add-button" 
             onClick={() => setModalOuvert(true)}
           >
             <span>+</span>
-            <span>Créer</span>
+            <span>Ajouter</span>
           </button>
         </div>
       </div>
 
       <div className="overflow-x-auto px-6 pt-4 pb-14">
-        <table className="w-full border-collapse">
-{/* En-têtes du tableau */}
-<thead>
-  <tr className={`text-left ${color === "light" ? "bg-gray-50 text-gray-500" : "bg-slate-700 text-slate-200"}`}>
-    <th className="px-6 py-4 font-medium">ID</th>
-    <th className="px-6 py-4 font-medium">Surnom</th>
-    <th className="px-6 py-4 font-medium">Email</th>
-    <th className="px-6 py-4 font-medium">Urgence</th>
-    <th className="px-6 py-4 font-medium">Statut</th>
-    <th className="px-6 py-4 font-medium">Date</th>
-    <th className="px-6 py-4 font-medium">Actions</th>
-  </tr>
-</thead>
+  <table className="w-full border-collapse">
+    <thead>
+      <tr className={`text-left ${
+        color === "light" ? "bg-gray-50 text-gray-500" : "bg-slate-700 text-slate-200"
+      }`}>
+        <th className="px-4 py-4 font-medium w-[10%] min-w-[80px]">ID</th>
+        <th className="px-4 py-4 font-medium w-[25%] min-w-[150px]">Nom</th>
+        <th className="px-4 py-4 font-medium w-[25%] min-w-[150px]">Prénom</th>
+        <th className="px-4 py-4 font-medium w-[25%] min-w-[180px]">Spécialité</th>
+        <th className="px-4 py-4 font-medium w-[15%] min-w-[120px]">Statut</th>
+        <th className="px-4 py-4 font-medium w-[15%] min-w-[100px]">Score</th>
+        <th className="px-4 py-4 font-medium w-[15%] min-w-[120px]">Actions</th>
+        
+      </tr>
+    </thead>
 <tbody>
-  {filteredItems.map((item) => (
-    <tr key={item.id} className={`border-t ${color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"} transition-colors`}>
-      <td className="px-6 py-4">{item.id}</td>
-      <td className="px-6 py-4 font-medium">{item.surnom}</td>
-      <td className="px-6 py-4">{item.email}</td>
-      <td className="px-6 py-4 font-semibold text-red-600">{item.urgency}</td>
-      <td className="px-6 py-4">
-        <span style={badgeStyle(item.status)}>
-          {item.status}
+  {filteredTechniciens.map((tech) => (
+    <tr 
+      key={tech.id} 
+      className={`border-t ${
+        color === "light" ? "hover:bg-gray-50" : "hover:bg-slate-700"
+      } transition-colors`}
+    >
+      <td className="px-6 py-4 whitespace-nowrap">{tech.id}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{tech.nom}</td>
+      <td className="px-6 py-4 whitespace-nowrap">{tech.prenom}</td>
+      
+      <td className="px-6 py-4 whitespace-nowrap">
+        <span style={specialiteStyle(tech.specialite)}>
+          {tech.specialite}
         </span>
       </td>
-      <td className="px-6 py-4">{item.date}</td>
-      
-      {/* Colonne Actions - Totalement intacte */}
-      <td className="px-6 py-4">
-        <div className="flex" style={{ gap: "8px" }}>
-          <button
-            onClick={() => {
-              setSelectedTicket(item);
-              setDetailsModalOpen(true);
-            }}
-            className="gp-action-icon gp-view"
-            title="Voir les détails"
-          >
-            <FaEye size={16} />
-          </button>
-          <button
-            onClick={() => {
-              setEditingTicket(item);
-              setEditModalOuvert(true);
-            }}
-            className="gp-action-icon gp-edit"
-            title="Modifier"
-          >
-            <FaEdit size={16} />
-          </button>
-          <button
-            onClick={() => {
-              setTicketToDelete(item.id);
-              setDeleteModalOuvert(true);
-            }}
-            className="gp-action-icon gp-delete"
-            title="Supprimer"
-          >
-            <FaTrash size={16} />
-          </button>
-        </div>
+     
+      <td className="px-6 py-4 whitespace-nowrap">
+      {tech.actif ? (
+  <span
+    style={{
+      color: '#28a745', // Vert
+      fontWeight: '500', // Poids de la police modéré
+      fontSize: '14px', // Taille de police plus petite
+      backgroundColor: '#d4edda', // Fond vert clair
+      padding: '4px 8px',
+      borderRadius: '5px',
+      textAlign: 'center',
+    }}
+  >
+    Actif
+  </span>
+  
+) : (
+  <span
+    style={{
+      color: '#dc3545', // Rouge
+      fontWeight: '500',
+      fontSize: '14px',
+      backgroundColor: '#f8d7da', // Fond rouge clair
+      padding: '4px 8px',
+      borderRadius: '5px',
+      textAlign: 'center',
+    }}
+  >
+    Inactif
+  </span>
+  
+)}
+</td>
+<td className="px-6 py-4 whitespace-nowrap">
+        <span style={scoreStyle(tech.score)}>
+          {tech.score}
+        </span>
       </td>
-    </tr>
-  ))}
-</tbody>
-
+      <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex">
+                    <button
+                      onClick={() => {
+                        setEditingTechnicien(tech);
+                        setEditModalOuvert(true);
+                      }}
+                      className="gp-action-icon gp-edit mr-2"
+                      title="Modifier"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTechnicienIdToDelete(tech.id);
+                        setDeleteModalOuvert(true);
+                      }}
+                      className="gp-action-icon gp-delete"
+                      title="Supprimer"
+                    >
+                      <FaTrash size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
 
-      {/* Modal Création */}
+      {/* Modal Ajout */}
       {modalOuvert && (
         <div className="gp-modal-overlay">
           <div className="gp-modal-container">
             <div className="gp-modal-header">
-              <h2 className="text-xl font-bold">Créer un ticket</h2>
+              <h2 className="text-xl font-bold">Nouveau Technicien</h2>
               <button onClick={() => setModalOuvert(false)}>
                 <X size={24} />
               </button>
@@ -458,74 +577,90 @@ export default function TicketTable({ color }) {
 
             <div>
               <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Sujet</label>
+                <label className="block font-semibold mb-1">Nom *</label>
                 <input
                   type="text"
-                  name="subject"
-                  value={newTicket.subject}
+                  name="nom"
+                  value={newTechnicien.nom}
                   onChange={handleChange}
                   className="gp-form-input"
                 />
-                {errors.subject && <p className="text-red-500 text-sm">{errors.subject}</p>}
+                {errors.nom && <p className="text-red-500 text-sm">{errors.nom}</p>}
               </div>
 
               <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Type</label>
-                <select
-                  name="type"
-                  value={newTicket.type}
+                <label className="block font-semibold mb-1">Prénom *</label>
+                <input
+                  type="text"
+                  name="prenom"
+                  value={newTechnicien.prenom}
                   onChange={handleChange}
-                  className="gp-form-input"
-                >
-                  <option value="">-- Sélectionner --</option>
-                  <option value="Informatique">Informatique</option>
-                  <option value="Ressources humaines">Ressources humaines</option>
-                  <option value="Comptabilité">Comptabilité</option>
-                </select>
-                {errors.type && <p className="text-red-500 text-sm">{errors.type}</p>}
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Urgence</label>
-                <select
-                  name="urgency"
-                  value={newTicket.urgency}
-                  onChange={handleChange}
-                  className="gp-form-input"
-                >
-                  <option value="">-- Sélectionner --</option>
-                  <option value="Urgent">Urgent</option>
-                  <option value="Normal">Normal</option>
-                </select>
-                {errors.urgency && <p className="text-red-500 text-sm">{errors.urgency}</p>}
-              </div>
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Description</label>
-                <textarea
-                  name="description"
-                  value={newTicket.description}
-                  onChange={handleChange}
-                  rows={4}
                   className="gp-form-input"
                 />
-                {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
+                {errors.prenom && <p className="text-red-500 text-sm">{errors.prenom}</p>}
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={newTechnicien.email}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                />
+                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              </div>
+              
+              <div className="gp-form-group">
+  <label className="block font-semibold mb-1">Téléphone *</label>
+  <input
+    type="tel"
+    name="telephone"
+    value={newTechnicien.telephone}
+    onChange={handleChange}
+    className="gp-form-input"
+  />
+  {errors.telephone && <p className="text-red-500 text-sm">{errors.telephone}</p>}
+</div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Rôle</label>
+                <div className="gp-form-input bg-gray-100 cursor-not-allowed">
+                  Technicien
+                  <input type="hidden" name="role" value="technicien" />
+                </div>
+              </div>
+
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Spécialité *</label>
+                <select
+                  name="specialite"
+                  value={newTechnicien.specialite}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                >
+                  <option value="">Sélectionner une spécialité</option>
+                  
+  <option value="informatique">Informatique</option>
+  <option value="reseaux">Réseaux</option>
+  <option value="support">Support client</option>
+  <option value="DAB">DAB</option>
+                </select>
+                {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
               </div>
 
               <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
                 <button 
-                  type="button"
                   onClick={() => setModalOuvert(false)} 
                   className="gp-btn gp-btn-cancel"
                 >
                   Annuler
                 </button>
                 <button 
-                  type="button"
                   onClick={handleCreateSubmit} 
                   className="gp-btn gp-btn-save"
                 >
-                  Créer
+                  Ajouter
                 </button>
               </div>
             </div>
@@ -533,192 +668,172 @@ export default function TicketTable({ color }) {
         </div>
       )}
 
-      {/* Modal Détails */}
-      {detailsModalOpen && selectedTicket && (
-        <div className="gp-modal-overlay">
-          <div className="gp-modal-container p-6 bg-white rounded-2xl shadow-2xl max-w-md mx-auto">
-  <div className="gp-modal-header flex justify-between items-center border-b pb-4 mb-4">
-    <h2 className="text-2xl font-extrabold text-gray-800">🧾 Détails du ticket</h2>
-    <button onClick={() => setDetailsModalOpen(false)} className="text-gray-500 hover:text-red-500 transition">
-      <X size={28} />
-    </button>
-  </div>
-
-  <div className="space-y-4">
-    {[
-      { label: ' ID', value: selectedTicket.id },
-      { label: ' Sujet', value: selectedTicket.subject },
-      { label: ' Type', value: selectedTicket.type },
-      { label: '🚨 Urgence', value: selectedTicket.urgency },
-      { label: ' Statut', value: selectedTicket.status },
-      { label: 'Date', value: selectedTicket.date },
-      { label: ' Description', value: selectedTicket.description, isMultiline: true },
-    ].map((item, index) => (
-      <div
-        key={index}
-        className="bg-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
-      >
-        <label className="block text-sm font-bold text-gray-600 mb-1">{item.label}</label>
-        <p className={item.isMultiline ? 'whitespace-pre-wrap text-gray-700' : 'text-gray-700'}>
-          {item.value}
-        </p>
+      {/* Modal Modification */}
+   {/* Modal Modification */}
+{editModalOuvert && editingTechnicien && (
+  <div className="gp-modal-overlay">
+    <div className="gp-modal-container">
+      <div className="gp-modal-header">
+        <h2 className="text-xl font-bold">Modifier Technicien</h2>
+        <button onClick={() => setEditModalOuvert(false)}>
+          <X size={24} />
+        </button>
       </div>
-    ))}
-  </div>
-</div>
 
+      <div>
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">ID</label>
+          <div className="gp-readonly-text">{editingTechnicien.id}</div>
         </div>
-      )}
 
-      {/* Modal Édition */}
-      {editModalOuvert && editingTicket && (
-        <div className="gp-modal-overlay">
-          <div className="gp-modal-container">
-            <div className="gp-modal-header">
-              <h2 className="text-xl font-bold">Modifier le ticket</h2>
-              <button onClick={() => setEditModalOuvert(false)}>
-                <X size={24} />
-              </button>
-            </div>
+        {/* Nouveau champ Nom */}
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Nom *</label>
+          <input
+            type="text"
+            name="nom"
+            value={editingTechnicien.nom}
+            onChange={handleEditChange}
+            className="gp-form-input"
+          />
+          {editErrors.nom && <p className="text-red-500 text-sm">{editErrors.nom}</p>}
+        </div>
 
-            <div>
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">ID</label>
-                <div className="gp-readonly-text">{editingTicket.id}</div>
-              </div>
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Prénom *</label>
+          <input
+            type="text"
+            name="prenom"
+            value={editingTechnicien.prenom}
+            onChange={handleEditChange}
+            className="gp-form-input"
+          />
+          {editErrors.prenom && <p className="text-red-500 text-sm">{editErrors.prenom}</p>}
+        </div>
 
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Sujet</label>
-                <input
-                  type="text"
-                  name="subject"
-                  value={editingTicket.subject}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                />
-                {editErrors.subject && <p className="text-red-500 text-sm">{editErrors.subject}</p>}
-              </div>
+        {/* Champ Email ajouté */}
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Email *</label>
+          <input
+            type="email"
+            name="email"
+            value={editingTechnicien.email}
+            onChange={handleEditChange}
+            className="gp-form-input"
+          />
+          {editErrors.email && <p className="text-red-500 text-sm">{editErrors.email}</p>}
+        </div>
 
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Type</label>
-                <select
-                  name="type"
-                  value={editingTicket.type}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                >
-                  <option value="">-- Sélectionner --</option>
-                  <option value="Informatique">Informatique</option>
-                  <option value="Ressources humaines">Ressources humaines</option>
-                  <option value="Comptabilité">Comptabilité</option>
-                </select>
-                {editErrors.type && <p className="text-red-500 text-sm">{editErrors.type}</p>}
-              </div>
+        {/* Spécialité en lecture seule */}
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Spécialité</label>
+          <input
+            type="text"
+            value={editingTechnicien.specialite}
+            className="gp-form-input bg-gray-100 cursor-not-allowed"
+            readOnly
+          />
+        </div>
 
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Urgence</label>
-                <select
-                  name="urgency"
-                  value={editingTicket.urgency}
-                  className="gp-form-input gp-disabled-input"
-                  disabled
-                >
-                  <option value="Urgent">Urgent</option>
-                  <option value="Normal">Normal</option>
-                </select>
-              </div>
-              <div className="gp-form-group">
+        <div className="gp-form-group">
+          <label className="block font-semibold mb-1">Nouveau mot de passe</label>
+          <input
+            type="password"
+            name="password"
+            value={editingTechnicien.password || ''}
+            onChange={handleEditChange}
+            className="gp-form-input"
+            placeholder="nouveau mot de passe"
+          />
+        </div>
+        <div className="gp-form-group">
   <label className="block font-semibold mb-1">Statut</label>
-  <select
-    name="statut"
-    value={editingTicket.statut}
-    onChange={handleEditChange}
-    className="gp-form-input"
-  >
-    <option value="ouvert">Ouvert</option>
-    <option value="en cours">En cours</option>
-    <option value="fermé">Fermé</option>
-  </select>
+  <label className="inline-flex items-center cursor-pointer">
+  <input
+  type="checkbox"
+  name="actif"
+  checked={editingTechnicien?.actif || false}
+  onChange={(e) => handleEditChange({
+    target: {
+      name: 'actif',
+      value: e.target.checked
+    }
+  })}
+  className="form-checkbox h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-400 rounded-lg transition duration-200 ease-in-out transform hover:scale-105"
+  style={{
+    backgroundColor: editingTechnicien?.actif ? '#4caf50' : '#f44336',
+    borderColor: editingTechnicien?.actif ? '#388e3c' : '#d32f2f',
+  }}
+/>
+    <span className="ml-2">
+      {editingTechnicien?.actif ? 'Actif' : 'Inactif'}
+    </span>
+  </label>
 </div>
 
-              
-
-              <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Description</label>
-                <textarea
-                  name="description"
-                  value={editingTicket.description}
-                  onChange={handleEditChange}
-                  rows={4}
-                  className="gp-form-input"
-                />
-                {editErrors.description && <p className="text-red-500 text-sm">{editErrors.description}</p>}
-              </div>
-
-              <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
-                <button 
-                  onClick={() => setEditModalOuvert(false)} 
-                  className="gp-btn gp-btn-cancel"
-                >
-                  Annuler
-                </button>
-                <button 
-                  onClick={handleEditSubmit}
-                  className="gp-btn gp-btn-save"
-                >
-                  Enregistrer
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
+          <button 
+            onClick={() => setEditModalOuvert(false)} 
+            className="gp-btn gp-btn-cancel"
+          >
+            Annuler
+          </button>
+          <button 
+            onClick={handleEditSubmit} 
+            className="gp-btn gp-btn-save"
+          >
+            Enregistrer
+          </button>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Modal Suppression */}
       {deleteModalOuvert && (
         <div className="gp-modal-overlay">
           <div className="gp-modal-container">
             <div className="gp-modal-header">
-              <h2 className="text-xl font-bold">Confirmer la suppression</h2>
+              <h2 className="text-xl font-bold">Confirmation</h2>
               <button onClick={() => setDeleteModalOuvert(false)}>
                 <X size={24} />
               </button>
             </div>
 
-            <div className="gp-delete-modal-content">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-16 w-16 text-red-600 mx-auto mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              
-              <p className="text-lg font-medium">
-                Êtes-vous sûr de vouloir supprimer ce ticket ?
-              </p>
-
-              <div className="gp-delete-buttons">
-                <button
-                  onClick={() => setDeleteModalOuvert(false)}
-                  className="gp-btn gp-btn-cancel"
+            <div className="text-center p-6">
+              <div className="mb-4">
+                <svg
+                  className="mx-auto h-16 w-16 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  Annuler
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="gp-btn gp-btn-danger"
-                >
-                  Supprimer
-                </button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
               </div>
+              <p className="text-lg font-medium mb-4">
+                Êtes-vous sûr de vouloir supprimer ce technicien ?
+              </p>
+              <div className="gp-delete-buttons">
+          <button
+            onClick={() => setDeleteModalOuvert(false)}
+            className="gp-btn gp-btn-cancel"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="gp-btn gp-btn-danger"
+          >
+            Supprimer
+          </button>
+        </div>
             </div>
           </div>
         </div>
@@ -727,10 +842,10 @@ export default function TicketTable({ color }) {
   );
 }
 
-TicketTable.defaultProps = {
+TechnicienTable.defaultProps = {
   color: "light",
 };
 
-TicketTable.propTypes = {
+TechnicienTable.propTypes = {
   color: PropTypes.oneOf(["light", "dark"]),
 };

@@ -25,6 +25,7 @@ import Home from "views/homepagevisiteur.js";
 import Register from "views/Register.js";
 import Login from "views/Login.js";
 import Ticket from "views/Ticket.js";
+
 import Test from "views/Test.js";
 import MyTickets from "views/MyTickets";
 ReactDOM.render(

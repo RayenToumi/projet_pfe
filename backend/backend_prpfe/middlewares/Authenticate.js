@@ -1,25 +1,32 @@
 const jwt = require('jsonwebtoken');
 
-// Middleware pour vérifier le token
-
 
 const authenticate = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
-  
-  console.log("Token reçu :", token); // Debug 1
 
   if (!token) {
-      return res.status(401).json({ error: 'Accès non autorisé, token manquant' });
+    return res.status(401).json({ error: 'Accès non autorisé, token manquant' });
   }
 
   try {
-      const decoded = jwt.verify(token, 'secret-key');
-      console.log("Token décodé :", decoded); // Debug 2
-      req.user = decoded;
-      next();
+    const decoded = jwt.verify(token, 'secret-key');
+
+    if (!decoded.nom || !decoded.prenom) {
+      return res.status(401).json({ error: 'Technicien non authentifié ou surnom manquant' });
+    }
+
+    req.user = {
+      id: decoded.id,
+      nom: decoded.nom,
+      prenom: decoded.prenom,
+      role: decoded.role,
+      surnom: `${decoded.nom} ${decoded.prenom}`,
+      specialite: decoded.specialite // ✅ AJOUT ICI
+    };
+
+    next();
   } catch (error) {
-      console.log("Erreur JWT :", error.message); // Debug 3
-      res.status(401).json({ error: 'Token invalide ou expiré' });
+    res.status(401).json({ error: 'Token invalide ou expiré' });
   }
 };
 

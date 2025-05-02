@@ -2,7 +2,7 @@ import React from "react";
 
 // components
 
-import NewTicket from "components/Cards/TicketTabletech";
+import NewTicket from "components/Cards/TicketTech";
 
 export default function Ticket() {
   return (

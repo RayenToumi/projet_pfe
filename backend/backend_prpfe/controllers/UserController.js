@@ -274,7 +274,13 @@ module.exports.login = async (req, res) => {
     await userModal.findByIdAndUpdate(user._id, { $set: { connecte } });
     
     // Modifier la durée ici (ex: 1 heure)
-    const token = jwt.sign({ id: user._id }, 'secret-key', { expiresIn: '1h' });
+    const token = jwt.sign({
+      id: user._id,
+      nom: user.nom,
+      prenom: user.prenom,
+      role: user.role,
+      specialite: user.specialite // ✅ Ajout ici
+    }, 'secret-key', { expiresIn: '1d' });
     
     // Corriger la configuration du cookie
     res.cookie('jwt_token', token, { 

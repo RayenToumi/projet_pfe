@@ -118,8 +118,9 @@ function NewTicketForm() {
             >
               <option value="">-- Sélectionner --</option>
               <option value="IT">Informatique</option>
-              <option value="RH">Ressources Humaines</option>
-              <option value="Comptabilité">Comptabilité</option>
+              <option value="NET">Problème réseau</option>
+              <option value="DAB">Distributeur(DAB)</option>
+              <option value="SC">Support client</option>
             </select>
 
             <label style={styles.label}>Niveau d'urgence</label>

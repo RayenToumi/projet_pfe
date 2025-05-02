@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('./UserSchema');  // Import du modèle User ici
+const User = require('./UserSchema');
 
 const TicketSchema = new mongoose.Schema({
     sujet: {
@@ -30,8 +30,17 @@ const TicketSchema = new mongoose.Schema({
     },
     user: {  
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',  // 'User' fait référence au modèle déjà défini dans UserSchema
+        ref: 'User',
         required: true
+    },
+    technicien: { 
+        type: String,  // Gardé pour compatibilité
+        default: null 
+    },
+    technicienId: {  // Nouveau champ pour la référence
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
     }
 }, { timestamps: true });
 

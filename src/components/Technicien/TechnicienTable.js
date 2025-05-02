@@ -10,39 +10,99 @@ export default function TechnicienTable({ color }) {
   useEffect(() => {
     const fetchTechniciens = async () => {
       try {
-        const response = await fetch('/allusers');
-        if (!response.ok) throw new Error('Erreur réseau');
+        const token = localStorage.getItem('jwt_token');
         
-        const data = await response.json();
-        
-        // Filtrage des utilisateurs avec le rôle 'technicien'
-        const techs = data.filter(user => user.role === 'technicien').map(tech => ({
-          id: tech._id,
-          nom: tech.nom,
-          prenom: tech.prenom,
-          email: tech.email,
-          specialite: tech.specialite,
-          actif: tech.actif, // Ajout du champ actif
-          password: ''
-        }));
-        
+        // Appel parallèle aux deux endpoints
+        const [usersResponse, scoresResponse] = await Promise.all([
+          fetch('/allusers'), // Sans token
+          fetch('/score', {  // Avec token
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+        ]);
+  
+        if (!usersResponse.ok || !scoresResponse.ok) {
+          throw new Error('Erreur réseau');
+        }
+  
+        const [usersData, scoresData] = await Promise.all([
+          usersResponse.json(),
+          scoresResponse.json()
+        ]);
+  
+        // Fusion des données
+        const techs = usersData
+          .filter(user => user.role === 'technicien')
+          .map(tech => {
+            const scoreInfo = scoresData.find(s => s.id === tech._id) || { score: '0.00' };
+            
+            return {
+              id: tech._id,
+              nom: tech.nom,
+              prenom: tech.prenom,
+              email: tech.email,
+              specialite: tech.specialite,
+              actif: tech.actif,
+              score: scoreInfo.score,
+              password: ''
+            };
+          });
+  
         setTechniciens(techs);
         setError(null);
+  
       } catch (err) {
         setError(err.message);
         console.error("Erreur de chargement:", err);
+        
+        // Gestion spécifique des erreurs 401
+        if (err.message.includes('401')) {
+          localStorage.removeItem('jwt_token');
+          // Ajouter une redirection vers /login si nécessaire
+        }
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchTechniciens();
   }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSpecialite, setFilterSpecialite] = useState("");
   const [filterId, setFilterId] = useState("");
-
+  const scoreStyle = (score) => {
+    const numericScore = parseFloat(score);
+  
+    let backgroundColor = '';
+    let icon = '';
+  
+    if (numericScore >= 0.8) {
+      backgroundColor = '#d1fae5'; // vert pâle
+      icon = '✓';
+    } else if (numericScore >= 0.5) {
+      backgroundColor = '#fef3c7'; // jaune pâle
+      icon = '⚠';
+    } else {
+      backgroundColor = '#fee2e2'; // rouge pâle
+      icon = '✕';
+    }
+  
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      padding: '4px 10px',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      backgroundColor,
+      color: '#111',
+      border: '1px solid #ccc'
+    };
+  };
+  
   const [modalOuvert, setModalOuvert] = useState(false);
   const [newTechnicien, setNewTechnicien] = useState({
     nom: "",
@@ -222,20 +282,29 @@ export default function TechnicienTable({ color }) {
     return matchesId && matchesSearch && matchesSpecialite;
   });
 
-  const specialiteStyle = (specialite) => ({
-    padding: "0.25rem 0.5rem",
-    borderRadius: "9999px",
-    fontSize: "0.75rem",
-    fontWeight: "500",
-    backgroundColor:
-      specialite === "Informatique" ? "#dbeafe" :
-      specialite === "Réseaux" ? "#dcfce7" :
-      specialite === "Électricité" ? "#fef3c7" : "#fee2e2",
-    color:
-      specialite === "Informatique" ? "#1d4ed8" :
-      specialite === "Réseaux" ? "#15803d" :
-      specialite === "Électricité" ? "#b45309" : "#b91c1c",
-  });
+  const specialiteStyle = (specialite) => {
+    const style = {
+      padding: "0.25rem 0.5rem",
+      borderRadius: "9999px",
+      fontSize: "0.75rem",
+      fontWeight: "500",
+    };
+  
+    switch(specialite.toLowerCase()) {
+      case "informatique":
+        return { ...style, backgroundColor: "#dbeafe", color: "#1d4ed8" };
+      case "reseaux":
+      case "réseaux": // Gestion des accents
+        return { ...style, backgroundColor: "#dcfce7", color: "#15803d" };
+      case "DAB":
+        return { ...style, backgroundColor: "#fef3c7", color: "#b45309" };
+      case "support":
+      case "support client":
+        return { ...style, backgroundColor: "#f3e8ff", color: "#6b21a8" }; // Nouvelle couleur
+      default:
+        return { ...style, backgroundColor: "#fee2e2", color: "#b91c1c" };
+    }
+  };
 
   return (
     <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
@@ -348,6 +417,7 @@ export default function TechnicienTable({ color }) {
         .gp-btn-danger:hover {
           background-color: #b91c1c;
         }
+          
       `}</style>
 
       <div className="px-6 pt-6 border-b-2 border-gray-300">
@@ -371,16 +441,16 @@ export default function TechnicienTable({ color }) {
           <FaFilter className="text-gray-700 text-xl mr-2" />
 
           <select
-            value={filterSpecialite}
-            onChange={(e) => setFilterSpecialite(e.target.value)}
-            className="w-50 sm:w-64 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
-          >
-            <option value="">Toutes les spécialités</option>
-            <option value="Informatique">Informatique</option>
-            <option value="Réseaux">Réseaux</option>
-            <option value="Électricité">Électricité</option>
-            <option value="Maintenance">Maintenance</option>
-          </select>
+  value={filterSpecialite}
+  onChange={(e) => setFilterSpecialite(e.target.value)}
+  className="w-50 sm:w-64 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
+>
+  <option value="">Toutes les spécialités</option>
+  <option value="informatique">Informatique</option>
+  <option value="reseaux">Réseaux</option>
+  <option value="support">Support client</option>
+  <option value="DAB">DAB</option>
+</select>
 
           <button 
             className="gp-add-button" 
@@ -403,6 +473,7 @@ export default function TechnicienTable({ color }) {
         <th className="px-4 py-4 font-medium w-[25%] min-w-[150px]">Prénom</th>
         <th className="px-4 py-4 font-medium w-[25%] min-w-[180px]">Spécialité</th>
         <th className="px-4 py-4 font-medium w-[15%] min-w-[120px]">Statut</th>
+        <th className="px-4 py-4 font-medium w-[15%] min-w-[100px]">Score</th>
         <th className="px-4 py-4 font-medium w-[15%] min-w-[120px]">Actions</th>
         
       </tr>
@@ -424,6 +495,7 @@ export default function TechnicienTable({ color }) {
           {tech.specialite}
         </span>
       </td>
+     
       <td className="px-6 py-4 whitespace-nowrap">
       {tech.actif ? (
   <span
@@ -439,6 +511,7 @@ export default function TechnicienTable({ color }) {
   >
     Actif
   </span>
+  
 ) : (
   <span
     style={{
@@ -453,8 +526,14 @@ export default function TechnicienTable({ color }) {
   >
     Inactif
   </span>
+  
 )}
 </td>
+<td className="px-6 py-4 whitespace-nowrap">
+        <span style={scoreStyle(tech.score)}>
+          {tech.score}
+        </span>
+      </td>
       <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex">
                     <button
@@ -561,10 +640,11 @@ export default function TechnicienTable({ color }) {
                   className="gp-form-input"
                 >
                   <option value="">Sélectionner une spécialité</option>
-                  <option value="Informatique">Informatique</option>
-                  <option value="Réseaux">Réseaux</option>
-                  <option value="Électricité">Électricité</option>
-                  <option value="Maintenance">Maintenance</option>
+                  
+  <option value="informatique">Informatique</option>
+  <option value="reseaux">Réseaux</option>
+  <option value="support">Support client</option>
+  <option value="DAB">DAB</option>
                 </select>
                 {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
               </div>
