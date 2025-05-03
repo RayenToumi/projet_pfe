@@ -329,8 +329,9 @@ module.exports.getAlltickets = async (req, res) => {
   
         const closedCount = tickets.filter(t => t.statut === 'fermé').length;
         const inProgressCount = tickets.filter(t => t.statut === 'en cours').length;
+        const totalTickets = closedCount + inProgressCount;
   
-        const score = closedCount / (inProgressCount + 1);
+        const score = totalTickets > 0 ? (closedCount / totalTickets) : 0;
   
         return {
           id: tech._id,
@@ -338,7 +339,7 @@ module.exports.getAlltickets = async (req, res) => {
           prenom: tech.prenom,
           specialite: tech.specialite,
           statut: tech.statut,
-          score: `${(score * 100).toFixed(1).replace(/\.0$/, '')}%`  // Formattage des scores
+          score: `${(score * 100).toFixed(1).replace(/\.0$/, '')}%`
         };
       }));
   
@@ -347,6 +348,7 @@ module.exports.getAlltickets = async (req, res) => {
       res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
   };
+  
   
   
   

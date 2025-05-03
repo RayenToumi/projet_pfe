@@ -228,12 +228,14 @@ export default function CardSettings() {
               <div className="w-full lg:w-6/12 px-4 mb-4">
   <label className="block font-semibold mb-1" htmlFor="email">Email</label>
   <input
-    type="email"
-    className="gp-form-input"
-    id="email"
-    value={userData.email}
-    onChange={handleUserChange}
-  />
+  type="email"
+  className="gp-form-input"
+  id="email"
+  value={userData.email}
+  onChange={handleUserChange}
+  disabled
+  style={{ backgroundColor: "#f3f3f3", cursor: "not-allowed" }}
+/>
   {errors.email && 
     <p className="error-message mt-1 text-sm">⚠️ Cet email est déjà utilisé</p>
   }
