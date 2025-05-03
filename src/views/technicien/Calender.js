@@ -1,5 +1,5 @@
 import React from "react";
-import Calenderr from "components/Calender/Calenderr";
+import Calenderr from "components/CalenderTech/Calenderr";
 
 export default function Calender() {
     return (

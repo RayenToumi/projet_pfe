@@ -7,7 +7,7 @@ import getDay from 'date-fns/getDay';
 import fr from 'date-fns/locale/fr';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-const locales = { 'fr': fr };
+const locales = { fr };
 const localizer = dateFnsLocalizer({
   format,
   parse,
@@ -16,30 +16,52 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const Calender = () => {
+const CalendarComponent = () => {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const response = await fetch('/alltickets');
-        if (!response.ok) throw new Error('Erreur réseau');
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+          console.error('Token JWT non trouvé dans le localStorage.');
+          return;
+        }
+
+        const response = await fetch('/alltickets', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erreur réseau: ${response.status}`);
+        }
 
         const tickets = await response.json();
 
-        const formattedEvents = tickets.map(ticket => ({
-          title: ticket.sujet,
-          start: new Date(ticket.createdAt),
-          end: new Date(ticket.createdAt),
-          statut: ticket.statut,
-          description: ticket.description,
-          type: ticket.type,
-          urgence: ticket.urgence
-        }));
+        const formattedEvents = tickets.map(ticket => {
+          const [day, month, year] = ticket.date.split('/');
+          const startDate = new Date(`${year}-${month}-${day}T09:00:00`);
+          const endDate = new Date(startDate);
+          endDate.setHours(endDate.getHours() + 1);
+
+          return {
+            title: ticket.sujet,
+            start: startDate,
+            end: endDate,
+            statut: ticket.statut.toLowerCase(),
+            description: ticket.description,
+            type: ticket.type,
+            urgence: ticket.urgence,
+          };
+        });
 
         setEvents(formattedEvents);
       } catch (error) {
-        console.error('Erreur:', error);
+        console.error('Erreur lors de la récupération des tickets:', error);
       }
     };
 
@@ -59,8 +81,8 @@ const Calender = () => {
         borderRadius: '5px',
         border: 'none',
         padding: '2px 5px',
-        fontSize: '0.8em'
-      }
+        fontSize: '0.8em',
+      },
     };
   };
 
@@ -70,7 +92,7 @@ const Calender = () => {
       style={{
         marginLeft: '40px',
         marginRight: '40px',
-        marginBottom: '20px', // réduit l'espace en bas
+        marginBottom: '20px',
         backgroundColor: '#fff',
         borderRadius: '10px',
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
@@ -86,7 +108,7 @@ const Calender = () => {
         events={events}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: 570 }} // hauteur réduite
+        style={{ height: 570 }}
         tooltipAccessor={(event) => `${event.title} (${event.type})`}
         eventPropGetter={eventStyleGetter}
       />
@@ -94,4 +116,4 @@ const Calender = () => {
   );
 };
 
-export default Calender;
+export default CalendarComponent;

@@ -7,7 +7,7 @@ import getDay from 'date-fns/getDay';
 import fr from 'date-fns/locale/fr';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-const locales = { fr };
+const locales = { 'fr': fr };
 const localizer = dateFnsLocalizer({
   format,
   parse,
@@ -16,37 +16,32 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const CalendarComponent = () => {
+const Calender = () => {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const token = localStorage.getItem('jwt_token');
-        if (!token) {
-          console.error('Token JWT non trouvé dans le localStorage.');
-          return;
-        }
+        const token = localStorage.getItem('jwt_token'); // Récupère le token JWT stocké
 
-        const response = await fetch('/alltickets', {
+        const response = await fetch('/allticketstec', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+            'Authorization': `Bearer ${token}`
+          }
         });
 
-        if (!response.ok) {
-          throw new Error(`Erreur réseau: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('Erreur réseau');
 
         const tickets = await response.json();
 
         const formattedEvents = tickets.map(ticket => {
+          // Utilise le champ 'date' comme date de début
           const [day, month, year] = ticket.date.split('/');
           const startDate = new Date(`${year}-${month}-${day}T09:00:00`);
           const endDate = new Date(startDate);
-          endDate.setHours(endDate.getHours() + 1);
+          endDate.setHours(endDate.getHours() + 1); // Durée de 1 heure
 
           return {
             title: ticket.sujet,
@@ -55,13 +50,13 @@ const CalendarComponent = () => {
             statut: ticket.statut.toLowerCase(),
             description: ticket.description,
             type: ticket.type,
-            urgence: ticket.urgence,
+            urgence: ticket.urgence
           };
         });
 
         setEvents(formattedEvents);
       } catch (error) {
-        console.error('Erreur lors de la récupération des tickets:', error);
+        console.error('Erreur:', error);
       }
     };
 
@@ -81,8 +76,8 @@ const CalendarComponent = () => {
         borderRadius: '5px',
         border: 'none',
         padding: '2px 5px',
-        fontSize: '0.8em',
-      },
+        fontSize: '0.8em'
+      }
     };
   };
 
@@ -116,4 +111,4 @@ const CalendarComponent = () => {
   );
 };
 
-export default CalendarComponent;
+export default Calender;
