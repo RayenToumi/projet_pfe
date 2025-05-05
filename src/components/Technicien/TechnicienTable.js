@@ -7,6 +7,8 @@ export default function TechnicienTable({ color }) {
   const [techniciens, setTechniciens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   useEffect(() => {
     const fetchTechniciens = async () => {
       try {
@@ -68,6 +70,21 @@ export default function TechnicienTable({ color }) {
   
     fetchTechniciens();
   }, []);
+  useEffect(() => {
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        const toast = document.querySelector('.toast-message');
+        if (toast) {
+          toast.style.animation = 'fade-out 0.3s ease-in forwards';
+          setTimeout(() => {
+            setShowSuccessMessage(false);
+            setSuccessMessage('');
+          }, 300);
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSpecialite, setFilterSpecialite] = useState("");
@@ -167,44 +184,40 @@ export default function TechnicienTable({ color }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...newTechnicien,
-          tel: newTechnicien.telephone, // Correction ici
-          role: 'technicien',
-          password: undefined,
-          telephone: undefined ,
-          actif: newTechnicien.actif 
-          // Supprimer l'ancien champ
+          tel: newTechnicien.telephone,
+          role: 'technicien'
         }),
       });
   
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de l\'ajout');
-      }
+      if (!response.ok) throw new Error('Erreur lors de la création');
   
-      const createdTechnicien = await response.json();
+      const createdTech = await response.json();
       
-      setTechniciens([...techniciens, {
-        id: createdTechnicien._id,
-        nom: createdTechnicien.nom,
-        prenom: createdTechnicien.prenom,
-        specialite: createdTechnicien.specialite,
+      setTechniciens(prev => [...prev, {
+        id: createdTech._id,
+        ...newTechnicien,
+        telephone: newTechnicien.telephone,
+        actif: true
       }]);
   
+      setSuccessMessage('Technicien créé avec succès');
+      setShowSuccessMessage(true);
       setModalOuvert(false);
       setNewTechnicien({
         nom: "",
         prenom: "",
         email: "",
         telephone: "",
-        role: "",
-        password: "",
-        specialite: "", // Ajouté
+        specialite: "",
+        password: ""
       });
+  
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`verifier bien les champs`);
+      alert(error.message);
     }
   };
+  
 
   const handleEditSubmit = async () => {
     const errors = validateEditForm(editingTechnicien);
@@ -216,35 +229,30 @@ export default function TechnicienTable({ color }) {
     try {
       const response = await fetch(`/updateuser/${editingTechnicien.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nom: editingTechnicien.nom,
           prenom: editingTechnicien.prenom,
+          email: editingTechnicien.email,
           specialite: editingTechnicien.specialite,
           password: editingTechnicien.password,
-          actif: editingTechnicien.actif // Ajouter ce champ
+          actif: editingTechnicien.actif
         }),
       });
   
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la mise à jour');
-      }
+      if (!response.ok) throw new Error('Erreur lors de la mise à jour');
   
-      const updatedTechnicien = await response.json();
-      
-      // Mettre à jour l'état avec la nouvelle valeur actif
-      setTechniciens(techniciens.map(tech => 
-        tech.id === updatedTechnicien._id ? {
-          ...tech,
-          ...updatedTechnicien,
-          actif: updatedTechnicien.actif // Assurer la mise à jour du statut
-        } : tech
-      ));
-      
+      setTechniciens(prev => 
+        prev.map(tech => 
+          tech.id === editingTechnicien.id ? 
+          { ...tech, ...editingTechnicien } : tech
+        )
+      );
+  
+      setSuccessMessage('Technicien modifié avec succès');
+      setShowSuccessMessage(true);
       setEditModalOuvert(false);
+  
     } catch (error) {
       console.error('Erreur:', error);
       setEditErrors({ general: error.message });
@@ -257,18 +265,22 @@ export default function TechnicienTable({ color }) {
         method: 'DELETE',
       });
   
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la suppression');
-      }
+      if (!response.ok) throw new Error('Erreur lors de la suppression');
   
-      setTechniciens(techniciens.filter(tech => tech.id !== technicienIdToDelete));
+      setTechniciens(prev => 
+        prev.filter(tech => tech.id !== technicienIdToDelete)
+      );
+      
+      setSuccessMessage('Technicien supprimé avec succès');
+      setShowSuccessMessage(true);
       setDeleteModalOuvert(false);
+  
     } catch (error) {
       console.error('Erreur:', error);
       alert(error.message);
     }
   };
+  
 
   const filteredTechniciens = techniciens.filter(tech => {
     const matchesId = filterId ? tech.id.toString().includes(filterId) : true;
@@ -310,6 +322,27 @@ export default function TechnicienTable({ color }) {
     <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
       color === "light" ? "bg-white" : "bg-slate-800 text-white"
     }`}>
+        {showSuccessMessage && (
+      <div className="toast-message animate-fade-in">
+        <div className="toast-content">
+          <div className="toast-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                 width="24" 
+                 height="24" 
+                 viewBox="0 0 24 24" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 strokeWidth="2" 
+                 strokeLinecap="round" 
+                 strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <span className="toast-text">{successMessage}</span>
+        </div>
+      </div>
+    )}
       
       <style jsx>{`
         .gp-action-icon {
@@ -326,6 +359,65 @@ export default function TechnicienTable({ color }) {
           gap: 1rem;
           margin-top: 2rem;
         }
+           .toast-message {
+        position: fixed;
+        bottom: 40px;
+        right: 40px;
+        background: linear-gradient(145deg, #1a4338, #0d2a23);
+        color: white;
+        border-radius: 8px;
+        padding: 18px 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-width: 400px;
+        font-family: 'Inter', sans-serif;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(6px);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .toast-icon {
+        color: #76e0a7;
+        display: flex;
+        align-items: center;
+      }
+
+      .toast-icon svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .toast-text {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.95);
+        letter-spacing: 0.2px;
+      }
+
+      @keyframes fade-in {
+        0% { transform: translateY(20px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+
+      .animate-fade-in {
+        animation: fade-in 0.3s ease-out forwards;
+      }
+
+      @keyframes fade-out {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(20px); opacity: 0; }
+      }
         .gp-edit {
           background-color: #e0f2fe;
           color: #0284c7;
@@ -715,13 +807,11 @@ export default function TechnicienTable({ color }) {
         <div className="gp-form-group">
           <label className="block font-semibold mb-1">Email *</label>
           <input
-            type="email"
-            name="email"
+            type="text"
             value={editingTechnicien.email}
-            onChange={handleEditChange}
-            className="gp-form-input"
+            className="gp-form-input bg-gray-100 cursor-not-allowed"
+            readOnly
           />
-          {editErrors.email && <p className="text-red-500 text-sm">{editErrors.email}</p>}
         </div>
 
         {/* Spécialité en lecture seule */}

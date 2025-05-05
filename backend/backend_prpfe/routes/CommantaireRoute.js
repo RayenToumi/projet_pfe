@@ -9,6 +9,7 @@ router.post('/addcom', authenticate, CommentaireController.createCommentaire);
 // Récupérer les commentaires d'un ticket
 router.get("/getcom", CommentaireController.getAllCommentaires);
 router.delete('/deletecom/:id', authenticate, CommentaireController.deleteCommentaire);
+router.get('/comtec',authenticate , CommentaireController.getCommentairesTechnicien);
 
 
 

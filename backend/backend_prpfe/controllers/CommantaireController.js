@@ -1,4 +1,5 @@
 const Commentaire = require('../models/CommantaireSchema.js');
+const TicketModel = require('../models/TicketSchema.js');  
 const mongoose = require('mongoose');
 
 // Créer un commentaire
@@ -122,6 +123,53 @@ module.exports.deleteCommentaire = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message || "Erreur serveur"
+    });
+  }
+};
+
+module.exports.getCommentairesTechnicien = async (req, res) => {
+  try {
+    const technicienId = req.user.id;
+
+    // Récupérer tous les tickets assignés à ce technicien
+    const tickets = await TicketModel.find({ technicienId }).select('_id');
+    const ticketIds = tickets.map(ticket => ticket._id);
+
+    if (ticketIds.length === 0) {
+      return res.status(404).json({
+        success: true,
+        data: [],
+        message: "Aucun ticket trouvé pour ce technicien"
+      });
+    }
+
+    // Récupérer les commentaires associés à ces tickets
+    const commentaires = await Commentaire.find({ ticket: { $in: ticketIds } })
+      .sort({ createdAt: -1 })
+      .populate('user', 'nom prenom') // Popule nom et prenom de l'utilisateur
+      .select('_id ticket commentaire createdAt user');
+
+    const filteredCommentaires = commentaires
+      .filter(com => com.user) // On ignore ceux dont l'user n'existe plus
+      .map(com => ({
+        id: com._id,
+        ticket: com.ticket,
+        commentaire: com.commentaire,
+        nom: com.user.nom,
+        prenom: com.user.prenom,
+        createdAt: com.createdAt
+      }));
+
+    return res.status(200).json({
+      success: true,
+      data: filteredCommentaires
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Erreur lors de la récupération des commentaires",
+      error: error.message
     });
   }
 };

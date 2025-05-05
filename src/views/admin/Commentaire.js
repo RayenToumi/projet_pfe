@@ -9,11 +9,12 @@ export default function AvisClientTable({ color }) {
   const [isError, setIsError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterId, setFilterId] = useState("");
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false); // Déclaration unique
+  const [successMessage, setSuccessMessage] = useState('');
   const [detailModalOuvert, setDetailModalOuvert] = useState(false);
   const [avisDetail, setAvisDetail] = useState(null);
   const [deleteModalOuvert, setDeleteModalOuvert] = useState(false);
   const [selectedAvisToDelete, setSelectedAvisToDelete] = useState(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   useEffect(() => {
     const fetchAvis = async () => {
       try {
@@ -38,10 +39,10 @@ export default function AvisClientTable({ color }) {
 
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem('jwt_token'); // Utiliser la bonne clé
+      const token = localStorage.getItem('jwt_token');
       
       if (!token) {
-        alert('Aucun token trouvé, veuillez vous reconnecter');
+        alert('Authentification requise - Veuillez vous reconnecter');
         return;
       }
   
@@ -54,22 +55,43 @@ export default function AvisClientTable({ color }) {
       });
   
       const data = await response.json();
-      
+  
       if (!response.ok) {
         throw new Error(data.message || 'Échec de la suppression');
       }
   
-
-      setAvis(avis.filter(a => a.id !== selectedAvisToDelete.id));
+      // Mise à jour optimiste de l'état
+      setAvis(prevAvis => prevAvis.filter(a => a.id !== selectedAvisToDelete.id));
+      
+      // Fermeture de la modal
       setDeleteModalOuvert(false);
+      
+      // Notification de succès
+      setSuccessMessage('Commentaire supprimé avec succès');
       setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000); 
   
     } catch (error) {
       console.error("Erreur détaillée:", error);
       alert(`Échec de la suppression : ${error.message}`);
     }
   };
+  
+  // Gestion des animations de notification
+  useEffect(() => {
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        const toast = document.querySelector('.toast-message');
+        if (toast) {
+          toast.style.animation = 'fade-out 0.3s ease-in forwards';
+          setTimeout(() => {
+            setShowSuccessMessage(false);
+            setSuccessMessage('');
+          }, 300);
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage]);
 
   const filteredAvis = avis.filter(a => {
     const safeNom = a.nom?.toLowerCase() || '';
@@ -89,13 +111,104 @@ export default function AvisClientTable({ color }) {
   
     return matchesId && matchesSearch;
   });
-
+  useEffect(() => {
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        const toast = document.querySelector('.toast-message');
+        if (toast) {
+          toast.style.animation = 'fade-out 0.3s ease-in forwards';
+          setTimeout(() => setShowSuccessMessage(false), 300);
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage]);
   return (
   <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
       color === "light" ? "bg-white" : "bg-slate-800 text-white"
     }`}>
+{showSuccessMessage && (
+  <div className="toast-message animate-fade-in">
+    <div className="toast-content">
+      <div className="toast-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" 
+             width="24" 
+             height="24" 
+             viewBox="0 0 24 24" 
+             fill="none" 
+             stroke="currentColor" 
+             strokeWidth="2" 
+             strokeLinecap="round" 
+             strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <span className="toast-text">{successMessage}</span>
+    </div>
+  </div>
+)}
       
       <style jsx>{`
+       .toast-message {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: linear-gradient(145deg, #1a4338, #0d2a23);
+    color: white;
+    border-radius: 8px;
+    padding: 18px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-width: 400px;
+    font-family: 'Inter', sans-serif;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  .toast-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .toast-icon {
+    color: #76e0a7;
+    display: flex;
+    align-items: center;
+  }
+
+  .toast-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .toast-text {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 0.2px;
+  }
+
+  @keyframes fade-in {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+
+  @keyframes fade-out {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(20px); opacity: 0; }
+  }
         .gp-action-icon {
           padding: 0.45rem;
           border-radius: 0.375rem;
@@ -173,31 +286,7 @@ export default function AvisClientTable({ color }) {
           max-width: 300px;
         }
 
-         .animate-fade-in-out {
-    animation: fadeInUp 0.5s ease-out, fadeOutDown 0.5s ease-out 2.5s forwards;
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translate(-100%, -20px);
-    }
-    to {
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-  }
-
-  @keyframes fadeOutDown {
-    from {
-      opacity: 1;
-      transform: translate(50%, 0);
-    }
-    to {
-      opacity: 0;
-      transform: translate(-50%, 20px);
-    }
-  }
+       
 
 
       `}</style>
@@ -365,23 +454,7 @@ export default function AvisClientTable({ color }) {
     </div>
   </div>
   )}
-{showSuccessMessage && (
-  <div className="fixed top-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-md shadow-md border-l-4 animate-fade-in-out"
-       style={{ backgroundColor: "#88d1a2", color: "white", borderLeftColor: "#86efac" }}>
-    <div className="flex items-center gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" 
-           width="24" height="24" viewBox="0 0 24 24" 
-           fill="none" 
-           stroke="white" 
-           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
-           className="lucide lucide-check-circle">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <span className="font-medium">Commantaire supprimer avec succès</span>
-    </div>
-  </div>
-)}
+
 
 </div>
   );

@@ -11,6 +11,7 @@ export default function TicketTable({ color }) {
   const [filterId, setFilterId] = useState("");
   const [error, setError] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // États création
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -83,6 +84,21 @@ export default function TicketTable({ color }) {
     };
     fetchTickets();
   }, [modalOuvert, editModalOuvert, deleteModalOuvert]);
+  useEffect(() => {
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        const toast = document.querySelector('.toast-message');
+        if (toast) {
+          toast.style.animation = 'fade-out 0.3s ease-in forwards';
+          setTimeout(() => {
+            setShowSuccessMessage(false);
+            setSuccessMessage('');
+          }, 300);
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage]);
 
   const handleChange = (e) => {
     setNewTicket({ ...newTicket, [e.target.name]: e.target.value });
@@ -97,27 +113,27 @@ export default function TicketTable({ color }) {
     
     // Validation du sujet
     if (!ticket.subject?.trim()) {
-      errors.subject = "Le sujet est requis.";
+      errors.subject = "Le sujet est obligatoire.";
     }
   
     // Validation du type
     if (!ticket.type) {
-      errors.type = "Le type est requis.";
+      errors.type = "Le type est obligatoire.";
     }
   
     // Validation de l'urgence (uniquement à la création)
     if (!isEdit && !ticket.urgency) {
-      errors.urgency = "L'urgence est requise.";
+      errors.urgency = "L'urgence est obligatoire.";
     }
   
     // Validation de la description
     if (!ticket.description?.trim()) {
-      errors.description = "La description est requise.";
+      errors.description = "La description est obligatoire.";
     }
   
     // Validation du statut (uniquement en édition)
     if (isEdit && !ticket.statut) {
-      errors.statut = "Le statut est requis.";
+      errors.statut = "Le statut est obligatoire.";
     }
   
     return errors;
@@ -128,25 +144,16 @@ export default function TicketTable({ color }) {
     if (Object.keys(errors).length > 0) return setErrors(errors);
   
     try {
-      // Récupération du token JWT
       const token = localStorage.getItem("jwt_token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-  
-      // Création du ticket avec authentification
       const response = await axios.post('/addticket', {
         sujet: newTicket.subject,
         type: newTicket.type,
         urgence: newTicket.urgency,
         description: newTicket.description
       }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
   
-      // Mise à jour optimiste UI
       setItems(prev => [...prev, {
         id: response.data._id,
         subject: response.data.sujet,
@@ -157,41 +164,15 @@ export default function TicketTable({ color }) {
         date: new Date(response.data.date).toLocaleDateString('fr-FR')
       }]);
   
-      // Fermeture modal et reset form
+      setSuccessMessage('Ticket créé avec succès');
+      setShowSuccessMessage(true);
       setModalOuvert(false);
       setNewTicket({ subject: "", type: "", urgency: "", description: "" });
   
-      // Sauvegarde locale fallback
-      const offlineTicket = {
-        ...newTicket,
-        id: response.data._id,
-        date: new Date().toLocaleDateString('fr-FR'),
-        statut: 'Ouvert'
-      };
-      
-      const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
-      localStorage.setItem("tickets", JSON.stringify([...storedTickets, offlineTicket]));
-  
     } catch (error) {
       console.error('Erreur création:', error);
-      
-      // Gestion erreur réseau/hors ligne
-      if (!navigator.onLine || error.response?.status === 401) {
-        const offlineTicket = {
-          ...newTicket,
-          id: `offline-${Date.now()}`,
-          date: new Date().toLocaleDateString('fr-FR'),
-          statut: 'En attente de synchronisation'
-        };
-  
-        const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
-        localStorage.setItem("tickets", JSON.stringify([...storedTickets, offlineTicket]));
-  
-        setError(`Erreur réseau - Ticket sauvegardé localement`);
-      } else if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        setError(error.message);
+      if (!navigator.onLine) {
+        setError('Erreur réseau - Ticket sauvegardé localement');
       }
     }
   };
@@ -202,44 +183,50 @@ export default function TicketTable({ color }) {
   
     try {
       const token = localStorage.getItem("jwt_token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-  
-      const updateData = {
+      await axios.put(`/updateticket/${editingTicket.id}`, {
         sujet: editingTicket.subject,
         type: editingTicket.type,
-        urgence: editingTicket.urgency,
         description: editingTicket.description,
         statut: editingTicket.statut
-      };
-  
-      await axios.put(`/updateticket/${editingTicket.id}`, updateData, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
   
+      setItems(prev => prev.map(item => 
+        item.id === editingTicket.id ? { 
+          ...item,
+          subject: editingTicket.subject,
+          type: editingTicket.type,
+          description: editingTicket.description,
+          statut: editingTicket.statut
+        } : item
+      ));
+  
+      setSuccessMessage('Ticket modifié avec succès');
+      setShowSuccessMessage(true);
       setEditModalOuvert(false);
-      
+  
     } catch (error) {
-      console.error("Erreur de mise à jour:", error.response?.data);
-      if (error.response?.data?.errors) {
-        setEditErrors(error.response.data.errors);
-      }
+      console.error("Erreur mise à jour:", error.response?.data);
     }
   };
   const confirmDelete = async () => {
     try {
-      await axios.delete(`/deleteticket/${ticketToDelete}`);
+      const token = localStorage.getItem("jwt_token");
+      await axios.delete(`/deleteticket/${ticketToDelete}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
       setItems(prev => prev.filter(item => item.id !== ticketToDelete));
-      setDeleteModalOuvert(false);
+      setSuccessMessage('Ticket supprimé avec succès');
       setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000);
+      setDeleteModalOuvert(false);
+  
     } catch (error) {
-      console.error("Erreur de suppression:", error.response?.data);
+      console.error("Erreur suppression:", error.response?.data);
     }
   };
+  
 
   const filteredItems = items.filter(item => {
     const matchesId = filterId ? item.id.toString().includes(filterId) : true;
@@ -265,6 +252,27 @@ export default function TicketTable({ color }) {
     <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
       color === "light" ? "bg-white" : "bg-slate-800 text-white"
     }`}>
+      {showSuccessMessage && (
+  <div className="toast-message animate-fade-in">
+    <div className="toast-content">
+      <div className="toast-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" 
+             width="24" 
+             height="24" 
+             viewBox="0 0 24 24" 
+             fill="none" 
+             stroke="currentColor" 
+             strokeWidth="2" 
+             strokeLinecap="round" 
+             strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <span className="toast-text">{successMessage}</span>
+    </div>
+  </div>
+)}
       
       <style jsx>{`
         .gp-action-icon {
@@ -275,6 +283,65 @@ export default function TicketTable({ color }) {
           align-items: center;
           justify-content: center;
         }
+          .toast-message {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: linear-gradient(145deg, #1a4338, #0d2a23);
+    color: white;
+    border-radius: 8px;
+    padding: 18px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-width: 400px;
+    font-family: 'Inter', sans-serif;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  .toast-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .toast-icon {
+    color: #76e0a7;
+    display: flex;
+    align-items: center;
+  }
+
+  .toast-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .toast-text {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 0.2px;
+  }
+
+  @keyframes fade-in {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+
+  @keyframes fade-out {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(20px); opacity: 0; }
+  }
         .gp-view {
           background-color: #dbeafe;
           color: #2563eb;
@@ -564,9 +631,11 @@ export default function TicketTable({ color }) {
                   className="gp-form-input"
                 >
                   <option value="">-- Sélectionner --</option>
-                  <option value="Informatique">Informatique</option>
-                  <option value="Ressources humaines">Ressources humaines</option>
-                  <option value="Comptabilité">Comptabilité</option>
+                
+<option value="IT">Informatique</option>
+<option value="NET">Problème réseau</option>
+<option value="DAB">Distributeur (DAB)</option>
+<option value="SC">Support client</option>
                 </select>
                 {errors.type && <p className="text-red-500 text-sm">{errors.type}</p>}
               </div>
@@ -677,30 +746,12 @@ export default function TicketTable({ color }) {
 
               <div className="gp-form-group">
                 <label className="block font-semibold mb-1">Sujet</label>
-                <input
-                  type="text"
-                  name="subject"
-                  value={editingTicket.subject}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                />
-                {editErrors.subject && <p className="text-red-500 text-sm">{editErrors.subject}</p>}
+                <div className="gp-readonly-text">{editingTicket.subject}</div>
               </div>
 
               <div className="gp-form-group">
                 <label className="block font-semibold mb-1">Type</label>
-                <select
-                  name="type"
-                  value={editingTicket.type}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                >
-                  <option value="">-- Sélectionner --</option>
-                  <option value="Informatique">Informatique</option>
-                  <option value="Ressources humaines">Ressources humaines</option>
-                  <option value="Comptabilité">Comptabilité</option>
-                </select>
-                {editErrors.type && <p className="text-red-500 text-sm">{editErrors.type}</p>}
+                <div className="gp-readonly-text">{editingTicket.type}</div>
               </div>
 
               <div className="gp-form-group">
@@ -733,14 +784,7 @@ export default function TicketTable({ color }) {
 
               <div className="gp-form-group">
                 <label className="block font-semibold mb-1">Description</label>
-                <textarea
-                  name="description"
-                  value={editingTicket.description}
-                  onChange={handleEditChange}
-                  rows={4}
-                  className="gp-form-input"
-                />
-                {editErrors.description && <p className="text-red-500 text-sm">{editErrors.description}</p>}
+                <div className="gp-readonly-text">{editingTicket.description}</div>
               </div>
 
               <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
@@ -811,23 +855,7 @@ export default function TicketTable({ color }) {
           </div>
         </div>
       )}
-      {showSuccessMessage && (
-  <div className="fixed top-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-md shadow-md border-l-4 animate-fade-in-out"
-       style={{ backgroundColor: "#88d1a2", color: "white", borderLeftColor: "#86efac", zIndex: 1000 }}>
-    <div className="flex items-center gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" 
-           width="24" height="24" viewBox="0 0 24 24" 
-           fill="none" 
-           stroke="white" 
-           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
-           className="lucide lucide-check-circle">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <span className="font-medium">Ticket supprimé avec succès</span>
-    </div>
-  </div>
-)}
+
     </div>
   );
 }

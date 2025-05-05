@@ -10,7 +10,9 @@ export default function TicketTabletech({ color }) {
   const [filterType, setFilterType] = useState("");
   const [filterId, setFilterId] = useState("");
   const [error, setError] = useState(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false); // Déclaration unique
+    const [successMessage, setSuccessMessage] = useState('');
 
   // États création
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -28,7 +30,15 @@ export default function TicketTabletech({ color }) {
   const [editErrors, setEditErrors] = useState({});
 
   // États suppression
-
+  useEffect(() => {
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage]);
 
   const handleTakeTicket = async (id) => {
     try {
@@ -161,47 +171,48 @@ const { data } = await axios.get('/alltickets', {
     if (Object.keys(errors).length > 0) return setErrors(errors);
   
     try {
-      // Récupération du token JWT
       const token = localStorage.getItem("jwt_token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
+      if (!token) throw new Error("Authentification requise");
   
-      // Création du ticket avec authentification
       const response = await axios.post('/addticket', {
         sujet: newTicket.subject,
         type: newTicket.type,
         urgence: newTicket.urgency,
         description: newTicket.description
       }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
   
-      // Mise à jour optimiste UI
-      setItems(prev => [...prev, {
-        id: response.data._id,
-        subject: response.data.sujet,
-        type: response.data.type,
-        urgency: response.data.urgence,
-        description: response.data.description,
-        status: 'Ouvert',
-        date: new Date(response.data.date).toLocaleDateString('fr-FR')
-      }]);
+      // Mise à jour optimiste de l'état
+      setItems(prev => [
+        ...prev,
+        {
+          id: response.data._id,
+          subject: response.data.sujet,
+          type: response.data.type,
+          urgency: response.data.urgence,
+          description: response.data.description,
+          status: 'Ouvert',
+          date: new Date(response.data.date).toLocaleDateString('fr-FR'),
+          statut: 'ouvert'
+        }
+      ]);
   
-      // Fermeture modal et reset form
+      // Réinitialisation du formulaire
       setModalOuvert(false);
       setNewTicket({ subject: "", type: "", urgency: "", description: "" });
   
-      // Sauvegarde locale fallback
+      // Gestion notification
+      setSuccessMessage('Ticket créé avec succès 🎉');
+      setShowSuccessMessage(true);
+  
+      // Sauvegarde locale de fallback
       const offlineTicket = {
         ...newTicket,
         id: response.data._id,
         date: new Date().toLocaleDateString('fr-FR'),
         statut: 'Ouvert'
       };
-      
       const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
       localStorage.setItem("tickets", JSON.stringify([...storedTickets, offlineTicket]));
   
@@ -216,15 +227,15 @@ const { data } = await axios.get('/alltickets', {
           date: new Date().toLocaleDateString('fr-FR'),
           statut: 'En attente de synchronisation'
         };
-  
-        const storedTickets = JSON.parse(localStorage.getItem("tickets")) || [];
-        localStorage.setItem("tickets", JSON.stringify([...storedTickets, offlineTicket]));
-  
-        setError(`Erreur réseau - Ticket sauvegardé localement`);
+        localStorage.setItem("tickets", JSON.stringify([
+          ...JSON.parse(localStorage.getItem("tickets") || "[]"), 
+          offlineTicket
+        ]));
+        setError('Erreur réseau - Ticket sauvegardé localement');
       } else if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
-        setError(error.message);
+        setError(error.message || 'Une erreur est survenue');
       }
     }
   };
@@ -255,8 +266,87 @@ const { data } = await axios.get('/alltickets', {
     <div className={`relative mx-auto max-w-screen-xl flex flex-col min-w-0 rounded-lg shadow-lg mb-10 ${
       color === "light" ? "bg-white" : "bg-slate-800 text-white"
     }`}>
-      
+{showSuccessMessage && (
+  <div className="toast-message animate-fade-in">
+    <div className="toast-content">
+      <div className="toast-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" 
+             width="24" 
+             height="24" 
+             viewBox="0 0 24 24" 
+             fill="none" 
+             stroke="currentColor" 
+             strokeWidth="2" 
+             strokeLinecap="round" 
+             strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <span className="toast-text">{successMessage}</span>
+    </div>
+  </div>
+)}
       <style jsx>{`
+        .toast-message {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: linear-gradient(145deg, #1a4338, #0d2a23);
+    color: white;
+    border-radius: 8px;
+    padding: 18px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-width: 400px;
+    font-family: 'Inter', sans-serif;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  .toast-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .toast-icon {
+    color: #76e0a7;
+    display: flex;
+    align-items: center;
+  }
+
+  .toast-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .toast-text {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 0.2px;
+  }
+
+  @keyframes fade-in {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+  }
+
+  @keyframes fade-out {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(20px); opacity: 0; }
+  }
         .gp-action-icon {
           padding: 0.45rem;
           border-radius: 0.375rem;
@@ -658,23 +748,7 @@ const { data } = await axios.get('/alltickets', {
 
 
 
-      {showSuccessMessage && (
-  <div className="fixed top-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-md shadow-md border-l-4 animate-fade-in-out"
-       style={{ backgroundColor: "#88d1a2", color: "white", borderLeftColor: "#86efac", zIndex: 1000 }}>
-    <div className="flex items-center gap-3">
-      <svg xmlns="http://www.w3.org/2000/svg" 
-           width="24" height="24" viewBox="0 0 24 24" 
-           fill="none" 
-           stroke="white" 
-           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
-           className="lucide lucide-check-circle">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <span className="font-medium">Ticket modifier avec succès</span>
-    </div>
-  </div>
-)}
+
     </div>
   );
 }

@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const userModal = require('../models/UserSchema');
 const crypto = require('crypto'); 
+const bcrypt = require('bcryptjs');
 
 // Configuration du transporteur d'email
 const transporter = nodemailer.createTransport({
@@ -42,9 +43,18 @@ module.exports.addUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ error: 'Email déjà utilisé. Veuillez en choisir un autre.' });
     }
-
-    // Générer un mot de passe aléatoire de 10 caractères
-    const rawPassword = crypto.randomBytes(5).toString('hex');
+    const generateStrongPassword = (length = 12) => {
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
+      let password = '';
+      for (let i = 0; i < length; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return password;
+    };
+    
+    const rawPassword = generateStrongPassword();
+    
+  
 
     const newUser = new userModal({
       nom,
@@ -320,5 +330,54 @@ module.exports.logout = async (req, res) => {
     res.status(500).json({message:error.message});
   }
 }
+module.exports.resetPasswordByEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await userModal.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'Aucun utilisateur trouvé avec cet email.' });
+    }
+
+    const generateStrongPassword = (length = 12) => {
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
+      let password = '';
+      for (let i = 0; i < length; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return password;
+    };
+    
+    const newPassword = generateStrongPassword();
+    
+    // Ne pas hasher manuellement ici
+    user.password = newPassword;
+    await user.save(); // Le hook hash automatiquement
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Réinitialisation de votre mot de passe STB',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
+          <h2 style="color: #004a7c;">🔐 Réinitialisation du mot de passe</h2>
+          <p>Bonjour <strong>${user.prenom}</strong>,</p>
+          <p>Voici votre <strong>nouveau mot de passe</strong> :</p>
+          <div style="padding: 10px; background-color: #f1f1f1; display: inline-block; font-family: monospace; font-size: 16px;">
+            ${newPassword}
+          </div>
+          <p style="margin-top: 20px;">Merci de le changer après votre prochaine connexion pour garantir la sécurité de votre compte.</p>
+          <hr>
+          <p style="font-size: 12px; color: gray;">STB - Service informatique</p>
+        </div>
+      `
+    });
+
+    res.status(200).json({ message: 'Mot de passe réinitialisé et envoyé par e-mail.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 

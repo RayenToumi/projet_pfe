@@ -11,10 +11,24 @@ export default function AvisClientTable({ color }) {
   useEffect(() => {
     const fetchAvis = async () => {
       try {
-        const response = await fetch('/getcom');
+        // Récupérer le token JWT depuis le stockage local
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+          throw new Error('Token JWT non trouvé');
+        }
+  
+        // Effectuer la requête avec le header Authorization
+        const response = await fetch('/comtec', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+  
         const result = await response.json();
         console.log(result);
-    
+  
         if (result.success) {
           setAvis(result.data);
         } else {
@@ -27,10 +41,10 @@ export default function AvisClientTable({ color }) {
         setIsLoading(false);
       }
     };
-    
   
     fetchAvis();
   }, []);
+  
 
 
   const [searchQuery, setSearchQuery] = useState("");
