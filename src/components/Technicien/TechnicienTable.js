@@ -44,6 +44,7 @@ export default function TechnicienTable({ color }) {
               nom: tech.nom,
               prenom: tech.prenom,
               email: tech.email,
+              telephone: tech.tel, 
               specialite: tech.specialite,
               actif: tech.actif,
               score: scoreInfo.score,
@@ -150,24 +151,74 @@ export default function TechnicienTable({ color }) {
 
   const validateForm = (technicien) => {
     const errors = {};
-    if (!technicien.nom.trim()) errors.nom = "Le nom est requis";
-    if (!technicien.prenom.trim()) errors.prenom = "Le prénom est requis";
-    if (!technicien.email.trim()) errors.email = "L'email est requis";
-    if (!technicien.telephone.trim()) errors.telephone = "Le téléphone est requis";
-    if (!technicien.specialite) errors.specialite = "La spécialité est requise";
+    
+    // Validation du nom
+    if (!technicien.nom.trim()) {
+      errors.nom = "Le nom est obligatoire";
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(technicien.nom)) {
+      errors.nom = "verifier bien le nom";
+    }
+  
+    // Validation du prénom
+    if (!technicien.prenom.trim()) {
+      errors.prenom = "Le prénom est obligatoire";
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(technicien.prenom)) {
+      errors.prenom = "verifier bien le prenom";
+    }
+  
+    // Validation de l'email
+    if (!technicien.email.trim()) {
+      errors.email = "L'email est obligatoire";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(technicien.email)) {
+      errors.email = "verifier bien l'email";
+    }
+  
+    // Validation du téléphone
+    if (!technicien.telephone.trim()) {
+      errors.telephone = "Le téléphone est obligatoire";
+    } else if (!/^[259]\d{7}$/.test(technicien.telephone)) {
+      errors.telephone = "verifier bien le numero de telephone";
+    }
+  
+    if (!technicien.specialite) errors.specialite = "La spécialité est obligatoire";
     if (typeof technicien.actif !== 'boolean') {
       errors.actif = "Statut invalide";
     }
+    
     return errors;
-   
   };
 
   const validateEditForm = (technicien) => {
     const errors = {};
-    if (!technicien.nom.trim()) errors.nom = "Le nom est requis";
-    if (!technicien.prenom.trim()) errors.prenom = "Le prénom est requis";
+  
+    // Validation du nom
+    if (!technicien.nom.trim()) {
+      errors.nom = "Le nom est obligatoire";
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(technicien.nom)) {
+      errors.nom = "verifier bien le nom";
+    }
+  
+    // Validation du prénom
+    if (!technicien.prenom.trim()) {
+      errors.prenom = "Le prénom est obligatoire";
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(technicien.prenom)) {
+      errors.prenom = "verifier bien le prenom";
+    }
+  
+    // Validation de l'email
+    if (!technicien.email.trim()) {
+      errors.email = "L'email est obligatoire";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(technicien.email)) {
+      errors.email = "verifier bien l'email";
+    }
+    if (!technicien.telephone.trim()) {
+      errors.telephone = "Le téléphone est obligatoire";
+    } else if (!/^[259]\d{7}$/.test(technicien.telephone)) {
+      errors.telephone = "verifier bien le numero de telephone";
+    }
+  
     if (!technicien.specialite) errors.specialite = "La spécialité est requise";
-    if (!technicien.email.trim()) errors.email = "L'email est requis"; // Nouvelle validation
+    
     return errors;
   };
 
@@ -189,9 +240,18 @@ export default function TechnicienTable({ color }) {
         }),
       });
   
-      if (!response.ok) throw new Error('Erreur lors de la création');
+      const data = await response.json();
   
-      const createdTech = await response.json();
+      if (!response.ok) {
+        if (data.error.toLowerCase().includes('email')) {
+          setErrors({ email: "Email déjà utilisé. Veuillez en choisir un autre." });
+        } else {
+          setErrors({ general: data.error || 'Erreur lors de la création' });
+        }
+        return;
+      }
+  
+      const createdTech = data;
       
       setTechniciens(prev => [...prev, {
         id: createdTech._id,
@@ -214,7 +274,11 @@ export default function TechnicienTable({ color }) {
   
     } catch (error) {
       console.error('Erreur:', error);
-      alert(error.message);
+      if (error.message.toLowerCase().includes('email')) {
+        setErrors({ email: "Email déjà utilisé. Veuillez en choisir un autre." });
+      } else {
+        setErrors({ general: error.message });
+      }
     }
   };
   
@@ -232,12 +296,13 @@ export default function TechnicienTable({ color }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nom: editingTechnicien.nom,
-          prenom: editingTechnicien.prenom,
-          email: editingTechnicien.email,
-          specialite: editingTechnicien.specialite,
-          password: editingTechnicien.password,
-          actif: editingTechnicien.actif
-        }),
+        prenom: editingTechnicien.prenom,
+        email: editingTechnicien.email,
+        specialite: editingTechnicien.specialite,
+        password: editingTechnicien.password,
+        actif: editingTechnicien.actif,
+        tel: editingTechnicien.telephone 
+      }),
       });
   
       if (!response.ok) throw new Error('Erreur lors de la mise à jour');
@@ -693,16 +758,20 @@ export default function TechnicienTable({ color }) {
               </div>
 
               <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Email *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={newTechnicien.email}
-                  onChange={handleChange}
-                  className="gp-form-input"
-                />
-                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-              </div>
+  <label className="block font-semibold mb-1">Email *</label>
+  <input
+    type="email"
+    name="email"
+    value={newTechnicien.email}
+    onChange={handleChange}
+    className="gp-form-input"
+  />
+  {errors.email && (
+    <p className="text-red-500 text-sm mt-1">
+      {errors.email}
+    </p>
+  )}
+</div>
               
               <div className="gp-form-group">
   <label className="block font-semibold mb-1">Téléphone *</label>
@@ -824,7 +893,18 @@ export default function TechnicienTable({ color }) {
             readOnly
           />
         </div>
-
+{/* Dans la partie Modal Modification */}
+<div className="gp-form-group">
+  <label className="block font-semibold mb-1">Téléphone *</label>
+  <input
+    type="tel"
+    name="telephone"
+    value={editingTechnicien.telephone}
+    onChange={handleEditChange}
+    className="gp-form-input"
+  />
+  {editErrors.telephone && <p className="text-red-500 text-sm">{editErrors.telephone}</p>}
+</div>
         <div className="gp-form-group">
           <label className="block font-semibold mb-1">Nouveau mot de passe</label>
           <input

@@ -75,14 +75,14 @@ export default function CardTable({ color }) {
     // Validation du nom
     if (!user.nom.trim()) {
       errors.nom = "Le nom est obligatoire.";
-    } else if (!/^[A-Za-zÀ-ÿ]+$/.test(user.nom)) {
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.nom)) {
       errors.nom = "verifier bien le nom.";
     }
   
     // Validation du prénom
     if (!user.prenom.trim()) {
       errors.prenom = "Le prénom est obligatoire.";
-    } else if (!/^[A-Za-zÀ-ÿ\s]+$/.test(user.prenom)) {
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.prenom)) {
       errors.prenom = "verifier bien le prenom";
     }
   
