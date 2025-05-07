@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Service Backend (Node.js)
+  backend:
+    build:
+      context: ./backend                   # Chemin vers le dossier backend
+      dockerfile: Dockerfile               # Nom du Dockerfile
+    ports:
+      - "5000:5000"                        # Port exposé pour le backend
+    volumes:
+      - ./backend:/app                     # Monte le code source du backend
+      - /app/node_modules                  # Évite l'écrasement des dépendances
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/stb_db  # Exemple de connexion MongoDB
+    networks:
+      - app-network
+    depends_on:
+      - mongo                             # Dépend de MongoDB (si utilisé)
+
+  # Service Frontend (React/Vue/Next.js/etc.)
+  frontend:
+    build:
+      context: ./frontend                  # Chemin vers le dossier frontend
+      dockerfile: Dockerfile               # Nom du Dockerfile
+    ports:
+      - "3000:3000"                        # Port exposé pour le frontend
+    volumes:
+      - ./frontend:/app                    # Monte le code source du frontend
+      - /app/node_modules                  # Évite l'écrasement des dépendances
+    networks:
+      - app-network
+    depends_on:
+      - backend                            # Dépend du backend
+
+  # Base de données MongoDB (optionnel)
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongo-data:/data/db               # Persistance des données
+    networks:
+      - app-network
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:                             # Volume pour MongoDB
