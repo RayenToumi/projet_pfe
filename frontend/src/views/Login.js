@@ -52,7 +52,7 @@ export default function LoginPage() {
           history.push("/admin/dashboard");
           break;
         case "technicien":
-          history.push("/homepage");
+          history.push("/technicien/ticket");
           break;
         default:
           history.push("/homepage");

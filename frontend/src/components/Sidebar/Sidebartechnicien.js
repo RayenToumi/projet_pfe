@@ -1,10 +1,74 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox, faComments } from '@fortawesome/free-solid-svg-icons'; // Ajout de faComments
+import { faTicket,faTicketSimple , faTools,faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox, faComments } from '@fortawesome/free-solid-svg-icons'; // Ajout de faComments
 
 export default function Sidebar() {
   const [collapseShow, setCollapseShow] = React.useState("hidden");
+  const history = useHistory();
+
+  const handleLogout = async () => {
+    try {
+      const userData = localStorage.getItem('user');
+      const token = localStorage.getItem('jwt_token');
+
+      console.log('Contenu de localStorage:');
+      console.log('- user:', userData);
+      console.log('- token:', token);
+
+      if (!userData && !token) {
+        throw new Error('Aucune donnée de session trouvée');
+      }
+
+      const missingItems = [];
+      if (!userData) missingItems.push('données utilisateur');
+      if (!token) missingItems.push('jeton JWT');
+      
+      if (missingItems.length > 0) {
+        throw new Error(`Éléments manquants : ${missingItems.join(', ')}`);
+      }
+
+      let user;
+      try {
+        user = JSON.parse(userData);
+        if (!user._id) throw new Error('ID utilisateur manquant');
+      } catch (parseError) {
+        console.error('Erreur de parsing des données utilisateur:', parseError);
+        throw new Error('Données utilisateur corrompues');
+      }
+
+      const response = await fetch(`/logout/${user._id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error(`Erreur serveur: ${response.status}`);
+
+      localStorage.removeItem('user');
+      localStorage.removeItem('jwt_token');
+      history.push('/login');
+
+    } catch (error) {
+      console.error('Journal complet d\'erreur:', error);
+      
+      let errorMessage = 'Erreur inconnue';
+      if (error.message.includes('manquants')) {
+        errorMessage = `Problème de session : ${error.message}`;
+      } else if (error.message.includes('corrompues')) {
+        errorMessage = 'Session invalide, veuillez vous reconnecter';
+      } else {
+        errorMessage = `Échec technique : ${error.message}`;
+      }
+      
+      alert(`Échec de la déconnexion :\n${errorMessage}`);
+    } finally {
+      setCollapseShow("hidden");
+    }
+  };
 
 
 
@@ -22,10 +86,7 @@ export default function Sidebar() {
           </button>
 
           {/* Brand */}
-          <Link
-            className="md:block text-left md:pb-2 text-blueGray-600 mr-0 inline-block whitespace-nowrap text-sm uppercase font-bold p-4 px-0"
-            to="/homepage"
-          >
+         
             <center>
             <img
   src="https://upload.wikimedia.org/wikipedia/commons/0/06/Logo_STB.png"
@@ -33,7 +94,7 @@ export default function Sidebar() {
   style={{ height: '75px', width: '180px' }}  // augmenté
 />
             </center>
-          </Link>
+         
           <hr className="my-4 border-t border-gray-600" />
           {/* Collapse */}
           <div
@@ -44,18 +105,7 @@ export default function Sidebar() {
           >
             {/* Navigation */}
             <ul className="md:flex-col md:min-w-full flex flex-col list-none space-y-2 mt-1">
-         <li>
-                        <Link
-                          className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
-                          to="/technicien/dashboard"
-                        >
-                          <FontAwesomeIcon 
-                            icon={faChartPie} 
-                            className="w-5 h-5 mr-3 text-blue-400" 
-                          />
-                          Tableau de bord
-                        </Link>
-                      </li>
+        
 
          
 
@@ -91,10 +141,10 @@ export default function Sidebar() {
                   to="/technicien/mestickets"
                 >
                   <FontAwesomeIcon 
-                    icon={faTicket} 
+                    icon={faTools} 
                     className="w-5 h-5 mr-3 text-purple-400" 
                   />
-                  Mes tickets 
+                  Mes tâches
                 </Link>
               </li>
                 <Link
@@ -109,6 +159,18 @@ export default function Sidebar() {
                 </Link>
               </li>
               <li>
+                        <Link
+                          className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
+                          to="/technicien/MyTicket"
+                        >
+                          <FontAwesomeIcon 
+                            icon={faTicketSimple} 
+                            className="w-5 h-5 mr-3 text-blue-400" 
+                          />
+                          Mes tickets
+                        </Link>
+                      </li>
+              <li>
                 <Link
                   className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
                   to="/technicien/settings"
@@ -121,6 +183,19 @@ export default function Sidebar() {
                 </Link>
               </li>
             </ul>
+            <div className="mt-8 border-t border-gray-700 pt-4">
+                        <button
+              onClick={handleLogout}
+              className="flex items-center w-full p-4 text-red-500 hover:bg-gray-700 rounded-xl transition-all duration-200"
+            >
+              <FontAwesomeIcon 
+                icon={faSignOutAlt} 
+                className="w-5 h-5 mr-3 text-red-500" 
+              />
+              Déconnexion
+            </button>
+            
+                      </div>
 
             
           </div>

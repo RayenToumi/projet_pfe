@@ -132,6 +132,7 @@ export default function Register() {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               style={{ width: "100%", padding: "8px", border: "1px solid #d1d5db", borderRadius: "6px", marginTop: "4px" }}
+              maxLength="8"
             />
             {errors.phoneNumber && <p style={{ color: "red", fontSize: "12px" }}>{errors.phoneNumber}</p>}
           </div>

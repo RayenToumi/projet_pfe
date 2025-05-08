@@ -44,7 +44,7 @@ module.exports.addUser = async (req, res) => {
       return res.status(400).json({ error: 'Email déjà utilisé. Veuillez en choisir un autre.' });
     }
     const generateStrongPassword = (length = 12) => {
-      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let password = '';
       for (let i = 0; i < length; i++) {
         password += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -320,7 +320,8 @@ module.exports.resetPasswordByEmail = async (req, res) => {
     }
 
     const generateStrongPassword = (length = 12) => {
-      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?';
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
       let password = '';
       for (let i = 0; i < length; i++) {
         password += chars.charAt(Math.floor(Math.random() * chars.length));

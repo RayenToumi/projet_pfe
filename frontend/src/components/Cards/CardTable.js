@@ -10,7 +10,8 @@ export default function CardTable({ color }) {
   const [filterId, setFilterId] = useState("");
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-
+  const [showPassword, setShowPassword] = useState(false);
+  const togglePassword = () => setShowPassword(!showPassword);
   const [modalOuvert, setModalOuvert] = useState(false);
   const [newUser, setNewUser] = useState({
     nom: "",
@@ -117,31 +118,34 @@ export default function CardTable({ color }) {
     const errors = {};
   
     if (!user.nom.trim()) {
-      errors.nom = "Le nom est requis.";
+      errors.nom = "Le nom est obligatoire.";
     } else if (!/^[A-Za-zÀ-ÿ]+$/.test(user.nom)) {
       errors.nom = "verifier bien le nom";
     }
   
     if (!user.prenom.trim()) {
-      errors.prenom = "Le prénom est requis.";
+      errors.prenom = "Le prénom est obligatoire.";
     } else if (!/^[A-Za-zÀ-ÿ\s]+$/.test(user.prenom)) {
       errors.prenom = "verifier bien le prenom";
     }
   
     if (!user.email.trim()) {
-      errors.email = "L'email est requis.";
+      errors.email = "L'email est obligatoire.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
       errors.email = "verifier l'email";
     }
   
     if (!user.telephone.trim()) {
-      errors.telephone = "Le téléphone est requis.";
+      errors.telephone = "Le numero de telephone et obligatoire.";
     } else if (!/^[259]\d{7}$/.test(user.telephone)) {
       errors.telephone = "verifier le numero de telephone";
     }
   
     if (!user.role) {
-      errors.role = "Le rôle est requis.";
+      errors.role = "Le rôle est obligatoire.";
+    }
+    if (user.password && user.password.length < 6) {
+      errors.password = "Le mot de passe doit contenir au moins 6 caractères.";
     }
   
     return errors;
@@ -410,6 +414,7 @@ export default function CardTable({ color }) {
           padding: 0.5rem;
           border: 1px solid #ccc;
           border-radius: 0.375rem;
+          
         }
         .gp-disabled-input {
           background-color: #f3f4f6;
@@ -689,7 +694,7 @@ export default function CardTable({ color }) {
         <div className="gp-form-group">
           <label className="block font-semibold mb-1">Téléphone</label>
           <input
-            type="tel"
+            type="text"
             name="telephone"
             value={newUser.telephone}
             onChange={handleChange}
@@ -805,13 +810,14 @@ export default function CardTable({ color }) {
               </div>
 
               <div className="gp-form-group">
-                <label className="block font-semibold mb-1">Téléphone</label>
+              <label className="block font-semibold mb-1">Téléphone</label>
                 <input
-                  type="tel"
+                  type="text"
                   name="telephone"
                   value={editingUser.telephone}
                   onChange={handleEditChange}
                   className="gp-form-input"
+                  maxLength="8"
                 />
                 {editErrors.telephone && <p className="text-red-500 text-sm">{editErrors.telephone}</p>}
               </div>
@@ -910,26 +916,49 @@ export default function CardTable({ color }) {
         <div className="gp-form-group">
           <label className="block font-semibold mb-1">Téléphone</label>
           <input
-            type="tel"
-            name="telephone"
-            value={editingUser.telephone}
-            onChange={handleEditChange}
-            className="gp-form-input"
-            maxLength="8"
-          />
+                  type="text"
+                  name="telephone"
+                  value={editingUser.telephone}
+                  onChange={handleEditChange}
+                  className="gp-form-input"
+                  maxLength="8"
+                />
           {editErrors.telephone && <p className="text-red-500 text-sm">{editErrors.telephone}</p>}
         </div>
 
         <div className="gp-form-group">
           <label className="block font-semibold mb-1">Mot de passe</label>
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             name="password"
             value={editingUser.password || ''}
             onChange={handleEditChange}
             className="gp-form-input"
             placeholder="Nouveau mot de passe"
+        
           />
+          {editErrors.password && <p className="text-red-500 text-sm">{editErrors.password}</p>}
+  <button
+    type="button"
+    onClick={togglePassword}
+    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600"
+    aria-label="Afficher ou masquer le mot de passe"
+  >
+    {showPassword ? (
+      // œil barré
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.325.26-2.587.725-3.75m1.45-2.225A9.956 9.956 0 0112 5c5.523 0 10 4.477 10 10a9.956 9.956 0 01-2.05 6.025M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2"/>
+      </svg>
+    ) : (
+      // œil ouvert
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z" />
+      </svg>
+    )}
+  </button>
+          
         </div>
 
         <div className="gp-form-group">

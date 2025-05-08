@@ -116,10 +116,12 @@ export default function CardSettings() {
       newErrors.tel = "Numéro de téléphone incorrect (8 chiffres, commence par 2, 5 ou 9).";
     }
 
-    if (passwordData.currentPassword && !passwordData.newPassword) {
+    if (passwordData.newPassword) {
+      if (passwordData.newPassword.length < 6) {
+        newErrors.newPassword = "Le mot de passe doit contenir au moins 6 caractères.";
+      }
+    } else if (passwordData.currentPassword) {
       newErrors.newPassword = "Veuillez entrer un nouveau mot de passe.";
-    } else if (passwordData.newPassword && passwordData.newPassword.length < 6) {
-      newErrors.newPassword = "Le mot de passe doit contenir au moins 6 caractères.";
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {

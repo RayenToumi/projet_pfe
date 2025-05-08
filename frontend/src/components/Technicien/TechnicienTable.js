@@ -9,6 +9,8 @@ export default function TechnicienTable({ color }) {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const togglePassword = () => setShowPassword(!showPassword);
   useEffect(() => {
     const fetchTechniciens = async () => {
       try {
@@ -215,6 +217,9 @@ export default function TechnicienTable({ color }) {
       errors.telephone = "Le téléphone est obligatoire";
     } else if (!/^[259]\d{7}$/.test(technicien.telephone)) {
       errors.telephone = "verifier bien le numero de telephone";
+    }
+    if (technicien.password && technicien.password.length < 6) {
+      errors.password = "Le mot de passe doit contenir au moins 6 caractères.";
     }
   
     if (!technicien.specialite) errors.specialite = "La spécialité est requise";
@@ -574,6 +579,12 @@ export default function TechnicienTable({ color }) {
         .gp-btn-danger:hover {
           background-color: #b91c1c;
         }
+            .gp-readonly-text {
+          padding: 0.5rem;
+          background-color: #f3f4f6;
+          border-radius: 0.375rem;
+          display: block;
+        }
           
       `}</style>
 
@@ -776,11 +787,12 @@ export default function TechnicienTable({ color }) {
               <div className="gp-form-group">
   <label className="block font-semibold mb-1">Téléphone *</label>
   <input
-    type="tel"
+    type="text"
     name="telephone"
     value={newTechnicien.telephone}
     onChange={handleChange}
     className="gp-form-input"
+    maxLength="8"
   />
   {errors.telephone && <p className="text-red-500 text-sm">{errors.telephone}</p>}
 </div>
@@ -874,47 +886,64 @@ export default function TechnicienTable({ color }) {
 
         {/* Champ Email ajouté */}
         <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Email *</label>
-          <input
-            type="text"
-            value={editingTechnicien.email}
-            className="gp-form-input bg-gray-100 cursor-not-allowed"
-            readOnly
-          />
+  
+          <label className="block font-semibold mb-1">Email</label>
+          <div className="gp-readonly-text">{editingTechnicien.email}</div>
+    
         </div>
 
         {/* Spécialité en lecture seule */}
         <div className="gp-form-group">
           <label className="block font-semibold mb-1">Spécialité</label>
-          <input
-            type="text"
-            value={editingTechnicien.specialite}
-            className="gp-form-input bg-gray-100 cursor-not-allowed"
-            readOnly
-          />
+    
+            <div className="gp-readonly-text">{editingTechnicien.specialite}</div>
+            
+     
         </div>
 {/* Dans la partie Modal Modification */}
 <div className="gp-form-group">
   <label className="block font-semibold mb-1">Téléphone *</label>
   <input
-    type="tel"
+    type="text"
     name="telephone"
     value={editingTechnicien.telephone}
     onChange={handleEditChange}
     className="gp-form-input"
+    maxLength="8"
   />
   {editErrors.telephone && <p className="text-red-500 text-sm">{editErrors.telephone}</p>}
 </div>
         <div className="gp-form-group">
           <label className="block font-semibold mb-1">Nouveau mot de passe</label>
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             name="password"
             value={editingTechnicien.password || ''}
             onChange={handleEditChange}
             className="gp-form-input"
             placeholder="nouveau mot de passe"
           />
+          {editErrors.password && <p className="text-red-500 text-sm">{editErrors.password}</p>}
+  <button
+    type="button"
+    onClick={togglePassword}
+    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600"
+    aria-label="Afficher ou masquer le mot de passe"
+  >
+    {showPassword ? (
+      // œil barré
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.325.26-2.587.725-3.75m1.45-2.225A9.956 9.956 0 0112 5c5.523 0 10 4.477 10 10a9.956 9.956 0 01-2.05 6.025M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2"/>
+      </svg>
+    ) : (
+      // œil ouvert
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z" />
+      </svg>
+    )}
+  </button>
         </div>
         <div className="gp-form-group">
   <label className="block font-semibold mb-1">Statut</label>

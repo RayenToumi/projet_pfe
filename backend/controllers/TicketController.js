@@ -1,4 +1,6 @@
 const TicketModel = require('../models/TicketSchema');
+const Commentaire = require('../models/CommantaireSchema');
+
 const UserModel = require('../models/UserSchema');
 const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
@@ -113,22 +115,29 @@ module.exports.getAlltickets = async (req, res) => {
 };
 
 
-  module.exports.deleteTicket = async (req, res) => {
-    try {
-      const ticketId = req.params.id;
-      const deletedTicket = await TicketModel.findByIdAndDelete(ticketId);
-  
-      if (!deletedTicket) {
-        return res.status(404).json({ message: "Ticket non trouvé" });
-      }
-      res.status(200).json({ message: "Ticket supprimé avec succès" });
-    } catch (error) {
-      res.status(500).json({
-        error: "Erreur lors de la suppression du ticket",
-        details: error.message
-      });
+module.exports.deleteTicket = async (req, res) => {
+  try {
+    const ticketId = req.params.id;
+
+    // Supprimer le ticket
+    const deletedTicket = await TicketModel.findByIdAndDelete(ticketId);
+
+    if (!deletedTicket) {
+      return res.status(404).json({ message: "Ticket non trouvé" });
     }
-  };
+
+    // Supprimer les commentaires associés à ce ticket
+    await Commentaire.deleteMany({ ticket: ticketId });
+
+    res.status(200).json({ message: "Ticket et commentaires associés supprimés avec succès" });
+
+  } catch (error) {
+    res.status(500).json({
+      error: "Erreur lors de la suppression du ticket",
+      details: error.message
+    });
+  }
+};
   // Mettre à jour un ticket par ID
   module.exports.updateTicket = async (req, res) => {
     try {

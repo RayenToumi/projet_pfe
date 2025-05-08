@@ -216,11 +216,12 @@ export default function TicketTech({ color }) {
       </div>
 
       <div className="flex justify-between px-6 pt-6 pb-4 items-center gap-4">
-        <input
+      <input
           type="text"
-          placeholder="🔍 Rechercher par surnom ou email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+      
+          placeholder="🔍 Rechercher par ID"
+         value={filterId}
+         onChange={(e) => setFilterId(e.target.value)}
           className="w-full sm:w-64 px-4 py-2 border rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-4"
         />
 
