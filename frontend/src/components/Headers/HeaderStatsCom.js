@@ -17,9 +17,9 @@ export default function HeaderStats() {
   return (
     <div className="relative bg-lightBlue-600 md:pt-32 pb-32 pt-12">
       <div className="px-4 md:px-10 mx-auto w-full">
-        <div className="flex flex-wrap">
+         <div className="flex flex-wrap justify-center">
         
-          <div className="w-full lg:w-4/12 xl:w-4/12 px-4">
+            <div className="w-full lg:w-4/12 xl:w-4/12 px-4">
             <CardStats
               statSubtitle="TECHNICIENS"
               statTitle={stats.techniciens}
@@ -33,16 +33,17 @@ export default function HeaderStats() {
           </div>
           <div className="w-full lg:w-4/12 xl:w-4/12 px-4">
             <CardStats
-              statSubtitle="UTILISATEURS"
-              statTitle={stats.utilisateurs}
+              statSubtitle="COMMANTAIRE"
+              statTitle={stats.totalCom}
               statArrow="up"
               statPercent="100"
               statPercentColor="text-emerald-500"
               statDescripiron="Nombre total"
-              statIconName="fas fa-users"
+              statIconName="fas fa-comment"
               statIconColor="bg-lightBlue-500"
             />
           </div>
+             
           
         </div>
       </div>

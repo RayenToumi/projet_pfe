@@ -6,6 +6,7 @@ import Sidebar from "components/Sidebar/Sidebar.js";
 import HeaderStats from "components/Headers/HeaderStats.js";
 import HeaderStatsTech from "components/Headers/HeaderStatsTech.js";
 import HeaderStatsTickets from "components/Headers/HeaderStatsTickets.js";
+import HeaderStatsCom from "components/Headers/HeaderStatsCom.js";
 import FooterAdmin from "components/Footers/FooterAdmin.js";
 
 // views
@@ -23,7 +24,13 @@ export default function Admin() {
 
   // Afficher le bon Header selon la page
   let headerToShow = null;
-  if (location.pathname === "/admin/tables" || location.pathname === "/admin/commentaire" || location.pathname === "/admin/settings"){
+
+  if (location.pathname === "/admin/commentaire") {
+    headerToShow = <HeaderStatsCom />; // Commentaires
+  } else if (
+    location.pathname === "/admin/tables" ||
+    location.pathname === "/admin/settings"
+  ) {
     headerToShow = <HeaderStats />; // Utilisateurs
   } else if (
     location.pathname === "/admin/ticket" ||
