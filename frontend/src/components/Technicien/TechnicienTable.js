@@ -620,13 +620,7 @@ export default function TechnicienTable({ color }) {
   <option value="DAB">DAB</option>
 </select>
 
-          <button 
-            className="gp-add-button" 
-            onClick={() => setModalOuvert(true)}
-          >
-            <span>+</span>
-            <span>Ajouter</span>
-          </button>
+         
         </div>
       </div>
 

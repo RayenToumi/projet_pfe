@@ -518,13 +518,7 @@ export default function TicketTable({ color }) {
             <option value="Normal">Normal</option>
           </select>
 
-          <button 
-            className="gp-add-button" 
-            onClick={() => setModalOuvert(true)}
-          >
-            <span>+</span>
-            <span>Créer</span>
-          </button>
+         
         </div>
       </div>
 

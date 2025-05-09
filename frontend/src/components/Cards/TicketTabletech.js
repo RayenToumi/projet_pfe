@@ -546,13 +546,7 @@ const { data } = await axios.get('/alltickets', {
             <option value="Normal">Normal</option>
           </select>
 
-          <button 
-            className="gp-add-button" 
-            onClick={() => setModalOuvert(true)}
-          >
-            <span>+</span>
-            <span>Créer</span>
-          </button>
+     
         </div>
       </div>
 

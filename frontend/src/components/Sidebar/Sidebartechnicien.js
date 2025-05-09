@@ -158,18 +158,7 @@ export default function Sidebar() {
                   les avis des clients
                 </Link>
               </li>
-              <li>
-                        <Link
-                          className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
-                          to="/technicien/MyTicket"
-                        >
-                          <FontAwesomeIcon 
-                            icon={faTicketSimple} 
-                            className="w-5 h-5 mr-3 text-blue-400" 
-                          />
-                          Mes tickets
-                        </Link>
-                      </li>
+            
               <li>
                 <Link
                   className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"

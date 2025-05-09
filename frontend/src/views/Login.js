@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
-import { FaGoogle } from "react-icons/fa";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -242,24 +242,6 @@ export default function LoginPage() {
                 <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
               </div>
 
-              <button
-                type="button"
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  border: "1px solid #d1d5db",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  background: "white"
-                }}
-              >
-                <FaGoogle style={{ color: "#3b82f6" }} /> Continue with Google
-              </button>
 
               <p style={{ fontSize: "14px", textAlign: "center", color: "#6b7280", marginTop: "12px" }}>
                 Don't have an account? <a href="Register" style={{ color: "#3b82f6", textDecoration: "none" }}>Sign Up</a>

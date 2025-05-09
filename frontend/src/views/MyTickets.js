@@ -91,6 +91,35 @@ function MyTickets() {
 
     fetchTickets();
   }, []);
+  useEffect(() => {
+  const fetchCommentaires = async () => {
+    if (!selectedTicket) return;
+
+    try {
+      const response = await fetch('/getcom');
+      const result = await response.json();
+
+      if (result.success) {
+        const commentairesTicket = result.data.filter(
+          (c) => c.ticket === selectedTicket._id
+        );
+
+        if (commentairesTicket.length > 0) {
+          setSubmitted(true); // Ne pas réafficher le formulaire
+          setSelectedTicket((prev) => ({
+            ...prev,
+            commentaireUser: commentairesTicket[0], // pour affichage
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des commentaires :", error);
+    }
+  };
+
+  fetchCommentaires();
+}, [selectedTicket]);
+
   
  
   
@@ -222,73 +251,62 @@ function MyTickets() {
                   </div>
 
                   {/* Évaluation si ticket fermé */}
-                  {selectedTicket.statut?.toLowerCase() === "fermé" && (
-                    <div
-                      style={{
-                        marginTop: "2rem",
-                        borderTop: "1px solid #ddd",
-                        paddingTop: "1rem",
-                      }}
-                    >
-                      <h4
-                        style={{
-                          fontSize: "1.1rem",
-                          marginBottom: "0.5rem",
-                          color: "#1a237e",
-                        }}
-                      >
-                        Évaluez l’intervention :
-                      </h4>
+                 {selectedTicket.statut?.toLowerCase() === "fermé" && (
+  <div style={{ marginTop: "2rem", borderTop: "1px solid #ddd", paddingTop: "1rem" }}>
+    <h4 style={{ fontSize: "1.1rem", marginBottom: "0.5rem", color: "#1a237e" }}>
+      Évaluez l’intervention :
+    </h4>
 
-                      {submitted ? (
-                        <p style={{ color: "green" }}>Merci pour votre retour !</p>
-                      ) : (
-                        <>
-                          
+    {submitted ? (
+      <div style={{ backgroundColor: "#f1f1f1", padding: "1rem", borderRadius: "6px" }}>
+        <p><strong>Commentaire soumis :</strong></p>
+        <p style={{ color: "#333", fontStyle: "italic" }}>
+          {selectedTicket.commentaireUser?.commentaire}
+        </p>
+      </div>
+    ) : (
+      <>
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={{
+            fontWeight: "bold",
+            display: "block",
+            marginBottom: "0.5rem",
+          }}>
+            Commentaire :
+          </label>
+          <textarea
+            rows="3"
+            value={feedback.commentaire}
+            onChange={(e) =>
+              setFeedback({ ...feedback, commentaire: e.target.value })
+            }
+            style={{
+              width: "100%",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+              padding: "0.5rem",
+              resize: "vertical",
+            }}
+          />
+        </div>
 
-                          <div style={{ marginBottom: "1rem" }}>
-                            <label
-                              style={{
-                                fontWeight: "bold",
-                                display: "block",
-                                marginBottom: "0.5rem",
-                              }}
-                            >
-                              Commentaire :
-                            </label>
-                            <textarea
-                              rows="3"
-                              value={feedback.commentaire}
-                              onChange={(e) =>
-                                setFeedback({ ...feedback, commentaire: e.target.value })
-                              }
-                              style={{
-                                width: "100%",
-                                borderRadius: "4px",
-                                border: "1px solid #ccc",
-                                padding: "0.5rem",
-                                resize: "vertical",
-                              }}
-                            />
-                          </div>
-
-                          <button
-                            onClick={handleSubmitFeedback}
-                            style={{
-                              backgroundColor: "#1a237e",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: "4px",
-                              padding: "0.5rem 1rem",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Envoyer
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
+        <button
+          onClick={handleSubmitFeedback}
+          style={{
+            backgroundColor: "#1a237e",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            padding: "0.5rem 1rem",
+            cursor: "pointer",
+          }}
+        >
+          Envoyer
+        </button>
+      </>
+    )}
+  </div>
+)}
                 </div>
               </div>
             )}
