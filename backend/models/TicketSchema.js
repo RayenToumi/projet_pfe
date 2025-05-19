@@ -41,7 +41,15 @@ const TicketSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         default: null
-    }
+    },
+    datePriseEnCharge: {
+    type: Date,
+    default: null
+  },
+  dateFermeture: {
+    type: Date,
+    default: null
+  }
 }, { timestamps: true });
 
 const Ticket = mongoose.model("Ticket", TicketSchema);

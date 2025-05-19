@@ -51,7 +51,7 @@ router.get('/stats', async (req, res) => {
     const techniciensInactifs = await User.countDocuments({ role: 'technicien', actif: false });
 
     const admins = await User.countDocuments({ role: 'admin' });
-    const utilisateurs = await User.countDocuments({ role: 'utilisateur' });
+    const clients = await User.countDocuments({ role: 'Client' });
 
     const totalCom = await Commentaire.countDocuments(); // 👈 Ajout du nombre total de commentaires
 
@@ -65,7 +65,7 @@ router.get('/stats', async (req, res) => {
       techniciensActifs,
       techniciensInactifs,
       admins,
-      utilisateurs,
+      clients,
       totalCom, // 👈 Inclusion dans la réponse JSON
     });
   } catch (err) {

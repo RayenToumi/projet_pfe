@@ -62,7 +62,7 @@ module.exports.addUser = async (req, res) => {
       email,
       password: rawPassword,
       tel,
-      role: role || 'utilisateur',
+      role: role || 'Client',
       specialite: role === 'technicien' ? specialite : undefined,
       actif: role === 'technicien' ? true : undefined // Ajout conditionnel de "actif"
     });

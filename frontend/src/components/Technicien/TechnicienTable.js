@@ -592,7 +592,7 @@ export default function TechnicienTable({ color }) {
         <h1 className={`text-2xl font-bold text-center ${
           color === "light" ? "text-gray-800" : "text-white"
         }`}>
-          Gestion des Techniciens
+          Liste des Techniciens
         </h1>
       </div>
 

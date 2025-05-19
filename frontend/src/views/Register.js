@@ -141,7 +141,7 @@ export default function Register() {
             onClick={handleSubmit}
             style={{ width: "100%", background: "#3b82f6", color: "white", padding: "10px", marginTop: "16px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}
           >
-            REGISTER
+            Créer mon compte
           </button>
 
           <div style={{ display: "flex", alignItems: "center", margin: "16px 0" }}>

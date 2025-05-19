@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: 'utilisateur',
+        default: 'Client',
     },
     specialite: {
         type: String,

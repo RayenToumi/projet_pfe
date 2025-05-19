@@ -74,11 +74,11 @@ export default function CardTable({ color }) {
     const errors = {};
     
     // Validation du nom
-    if (!user.nom.trim()) {
-      errors.nom = "Le nom est obligatoire.";
-    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.nom)) {
-      errors.nom = "verifier bien le nom.";
-    }
+if (!user.nom.trim()) {
+  errors.nom = "Le nom est obligatoire.";
+} else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.nom.trim())) {
+  errors.nom = "Le nom ne doit contenir que des lettres et des espaces.";
+}
   
     // Validation du prénom
     if (!user.prenom.trim()) {
@@ -119,13 +119,13 @@ export default function CardTable({ color }) {
   
     if (!user.nom.trim()) {
       errors.nom = "Le nom est obligatoire.";
-    } else if (!/^[A-Za-zÀ-ÿ]+$/.test(user.nom)) {
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.nom)) {
       errors.nom = "verifier bien le nom";
     }
   
     if (!user.prenom.trim()) {
       errors.prenom = "Le prénom est obligatoire.";
-    } else if (!/^[A-Za-zÀ-ÿ\s]+$/.test(user.prenom)) {
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.prenom)) {
       errors.prenom = "verifier bien le prenom";
     }
   
@@ -567,7 +567,7 @@ export default function CardTable({ color }) {
           >
             <option value="">Tous les rôles</option>
             <option value="admin">Admin</option>
-            <option value="utilisateur">Utilisateur</option>
+            <option value="utilisateur">Client</option>
             <option value="technicien">Technicien</option>
           </select>
 
@@ -714,7 +714,7 @@ export default function CardTable({ color }) {
           >
             <option value="">-- Sélectionner --</option>
             <option value="admin">Admin</option>
-            <option value="utilisateur">Utilisateur</option>
+            <option value="utilisateur">Client</option>
             <option value="technicien">Technicien</option>
           </select>
           {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
@@ -843,7 +843,7 @@ export default function CardTable({ color }) {
                   className="gp-form-input"
                 >
                   <option value="admin">Admin</option>
-                  <option value="utilisateur">Utilisateur</option>
+                  <option value="utilisateur">Client</option>
                   <option value="technicien">Technicien</option>
                 </select>
 
@@ -970,7 +970,7 @@ export default function CardTable({ color }) {
             className="gp-form-input"
           >
             <option value="admin">Admin</option>
-            <option value="utilisateur">Utilisateur</option>
+            <option value="utilisateur">Client</option>
             <option value="technicien">Technicien</option>
           </select>
           {editErrors.role && <p className="text-red-500 text-sm">{editErrors.role}</p>}

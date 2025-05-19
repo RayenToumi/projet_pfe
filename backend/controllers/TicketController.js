@@ -88,24 +88,31 @@ module.exports.getAlltickets = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    const formattedTickets = ticketlist.map(ticket => {
-      const createur = ticket.user
-        ? {
-            surnom: `${ticket.user.nom} ${ticket.user.prenom}`,
-            email: ticket.user.email
-          }
-        : {
-            surnom: "Utilisateur supprimé",
-            email: "N/A"
-          };
-
-      return {
-        ...ticket._doc,
-        createur,
-        date: new Date(ticket.date).toLocaleDateString('fr-FR'),
-        statut: ticket.statut.charAt(0).toUpperCase() + ticket.statut.slice(1)
+const formattedTickets = ticketlist.map(ticket => {
+  const createur = ticket.user
+    ? {
+        surnom: `${ticket.user.nom} ${ticket.user.prenom}`,
+        email: ticket.user.email
+      }
+    : {
+        surnom: "Utilisateur supprimé",
+        email: "N/A"
       };
-    });
+
+  return {
+    ...ticket._doc,
+    createur,
+    date: new Date(ticket.date).toLocaleDateString('fr-FR'),
+    statut: ticket.statut.charAt(0).toUpperCase() + ticket.statut.slice(1),
+    datePriseEnCharge: ticket.datePriseEnCharge
+      ? new Date(ticket.datePriseEnCharge).toLocaleString('fr-FR')
+      : null,
+    dateFermeture: ticket.dateFermeture
+      ? new Date(ticket.dateFermeture).toLocaleString('fr-FR')
+      : null
+  };
+});
+
 
     res.status(200).json(formattedTickets);
   } catch (error) {
@@ -139,114 +146,124 @@ module.exports.deleteTicket = async (req, res) => {
   }
 };
   // Mettre à jour un ticket par ID
-  module.exports.updateTicket = async (req, res) => {
-    try {
-      const ticketId = req.params.id;
-      const updates = req.body;
-  
-      if (!req.user || !req.user.surnom) {
-        return res.status(400).json({ error: "Technicien non authentifié ou surnom manquant" });
-      }
-      if (updates.statut && (updates.statut === 'en cours' || updates.statut === 'fermé')) {
-        updates.technicien = `${req.user.nom} ${req.user.prenom}`; // Ancien format
-        updates.technicienId = req.user.id; // Nouveau format
-      }
-  
-     
-  
-      const surnomTechnicien = req.user.surnom;
-  
-      // Ajouter automatiquement le technicien si le statut change vers en cours ou fermé
-      if (updates.statut && (updates.statut === 'en cours' || updates.statut === 'fermé')) {
-        updates.technicien = surnomTechnicien;
-      }
-  
-      const updatedTicket = await TicketModel.findByIdAndUpdate(ticketId, updates, {
-        new: true,
-        runValidators: true
-      }).populate('user', 'email');
-  
-      if (!updatedTicket) {
-        return res.status(404).json({ message: "Ticket non trouvé" });
-      }
-  
-      if (updatedTicket.statut.toLowerCase() === 'fermé') {
-        const mailOptions = {
-          from: process.env.EMAIL_USER,
-          to: updatedTicket.user.email,
-          subject: `Clôture du ticket : ${updatedTicket.sujet}`,
-          html: `
-          <div style="max-width: 600px; margin: 20px auto; font-family: 'Segoe UI', sans-serif; color: #333;">
-            <div style="background: #e2e8f0; padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="margin: 0; font-size: 20px;">Notification de clôture de ticket</h2>
-            </div>
-      
-            <div style="padding: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-              <p>Bonjour,</p>
-      
-              <p>Nous vous informons que votre ticket a été <strong>clôturé</strong>. Voici les détails :</p>
-      
-              <table style="width: 100%; margin: 20px 0; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 8px; font-weight: bold;">Sujet :</td>
-                  <td style="padding: 8px;">${updatedTicket.sujet}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; font-weight: bold;">Statut :</td>
-                  <td style="padding: 8px;">Fermé</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px; font-weight: bold;">Date de fermeture :</td>
-                  <td style="padding: 8px;">
-                    ${new Date().toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </td>
-                </tr>
-              </table>
-      
-              <p>Merci d’avoir utilisé notre service de support. Pour toute autre demande, n’hésitez pas à nous contacter.</p>
-      
-              <p style="margin-top: 30px;">Cordialement,</p>
-              <p style="font-weight: 500;">L’équipe d’assistance technique</p>
-              <p style="font-size: 14px; color: #6b7280;">contact@stb.tn | ✆ 71 71 00 00</p>
-            </div>
-      
-            <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #9ca3af;">
-              © ${new Date().getFullYear()} Votre Entreprise. Tous droits réservés.
-            </div>
+module.exports.updateTicket = async (req, res) => {
+  try {
+    const ticketId = req.params.id;
+    const updates = req.body;
+
+    if (!req.user || !req.user.surnom) {
+      return res.status(400).json({ error: "Technicien non authentifié ou surnom manquant" });
+    }
+
+    const ticketActuel = await TicketModel.findById(ticketId);
+    if (!ticketActuel) {
+      return res.status(404).json({ message: "Ticket non trouvé" });
+    }
+
+    // Si changement de statut, enregistrer les dates
+    if (updates.statut === 'en cours' && ticketActuel.statut === 'ouvert') {
+      updates.datePriseEnCharge = new Date();
+    }
+
+    if (updates.statut === 'fermé' && ticketActuel.statut !== 'fermé') {
+      updates.dateFermeture = new Date();
+    }
+
+    // Mettre à jour le technicien si statut est "en cours" ou "fermé"
+    if (updates.statut && (updates.statut === 'en cours' || updates.statut === 'fermé')) {
+      updates.technicien = `${req.user.nom} ${req.user.prenom}`;
+      updates.technicienId = req.user.id;
+    }
+
+    // Mise à jour en base
+    const updatedTicket = await TicketModel.findByIdAndUpdate(ticketId, updates, {
+      new: true,
+      runValidators: true
+    }).populate('user', 'email');
+
+    if (!updatedTicket) {
+      return res.status(404).json({ message: "Ticket non trouvé après mise à jour" });
+    }
+
+    // Envoi de mail si ticket est fermé
+    if (updatedTicket.statut.toLowerCase() === 'fermé') {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: updatedTicket.user.email,
+        subject: `Clôture du ticket : ${updatedTicket.sujet}`,
+        html: `
+        <div style="max-width: 600px; margin: 20px auto; font-family: 'Segoe UI', sans-serif; color: #333;">
+          <div style="background: #e2e8f0; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0; font-size: 20px;">Notification de clôture de ticket</h2>
           </div>
-          `
-        };
-      
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.error("Erreur d'envoi d'email:", error);
-          } else {
-            console.log("Email envoyé:", info.response);
-          }
-        });
-      }
-      
-  
-      res.status(200).json({
-        message: "Ticket mis à jour avec succès",
-        ticket: {
-          ...updatedTicket._doc,
-          date: updatedTicket.date.toLocaleDateString("fr-FR"),
-          createdAt: updatedTicket.createdAt.toLocaleDateString("fr-FR")
+
+          <div style="padding: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+            <p>Bonjour,</p>
+
+            <p>Nous vous informons que votre ticket a été <strong>clôturé</strong>. Voici les détails :</p>
+
+            <table style="width: 100%; margin: 20px 0; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px; font-weight: bold;">Sujet :</td>
+                <td style="padding: 8px;">${updatedTicket.sujet}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-weight: bold;">Statut :</td>
+                <td style="padding: 8px;">Fermé</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-weight: bold;">Date de fermeture :</td>
+                <td style="padding: 8px;">
+                  ${new Date(updatedTicket.dateFermeture).toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </td>
+              </tr>
+            </table>
+
+            <p>Merci d’avoir utilisé notre service de support. Pour toute autre demande, n’hésitez pas à nous contacter.</p>
+
+            <p style="margin-top: 30px;">Cordialement,</p>
+            <p style="font-weight: 500;">L’équipe d’assistance technique</p>
+            <p style="font-size: 14px; color: #6b7280;">contact@stb.tn | ✆ 71 71 00 00</p>
+          </div>
+
+          <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #9ca3af;">
+            © ${new Date().getFullYear()} Votre Entreprise. Tous droits réservés.
+          </div>
+        </div>
+        `
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("Erreur d'envoi d'email:", error);
+        } else {
+          console.log("Email envoyé:", info.response);
         }
       });
-    } catch (error) {
-      res.status(500).json({
-        error: "Erreur lors de la mise à jour du ticket",
-        details: error.message
-      });
     }
-  };
+
+    // Réponse finale
+    res.status(200).json({
+      message: "Ticket mis à jour avec succès",
+      ticket: {
+        ...updatedTicket._doc,
+        date: updatedTicket.date.toLocaleDateString("fr-FR"),
+        createdAt: updatedTicket.createdAt.toLocaleDateString("fr-FR")
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Erreur lors de la mise à jour du ticket",
+      details: error.message
+    });
+  }
+};
+
   
   module.exports.getTicketsByUser = async (req, res) => {
     try {

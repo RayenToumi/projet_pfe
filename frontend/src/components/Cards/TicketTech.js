@@ -211,7 +211,9 @@ export default function TicketTech({ color }) {
         <h1 className={`text-2xl font-bold text-center ${
           color === "light" ? "text-gray-800" : "text-white"
         }`}>
-          Liste des tickets
+          Mes tâches
+
+
         </h1>
       </div>
 

@@ -56,11 +56,21 @@ export default function TicketTable({ color }) {
             surnom: t.createur?.surnom || 'Anonyme',
             email: t.createur?.email || 'N/A',
             technicien: t.technicien || 'Non assigné',
-            datePriseEnCharge: new Date(t.updatedAt).toLocaleDateString('fr-FR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            }),
+        datePriseEnCharge: t.datePriseEnCharge 
+      ? new Date(t.datePriseEnCharge).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+      : 'Non pris en charge', // Texte si pas encore pris en charge
+    dateFermeture: t.dateFermeture 
+      ? new Date(t.dateFermeture).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+      : 'Non fermé', // Texte si pas encore fermé
+    statut: t.statut,
           
             urgency: t.urgence,
             
@@ -703,7 +713,8 @@ export default function TicketTable({ color }) {
       { label: 'Date', value: selectedTicket.date },
       { label: ' Description', value: selectedTicket.description, isMultiline: true },
       { label: ' technicien',value: selectedTicket.technicien},
-      { label: ' date de prise en charge' ,value: selectedTicket.datePriseEnCharge}
+      { label: ' date de prise en charge' ,value: selectedTicket.datePriseEnCharge},
+      { label: ' date de fermeture' ,value: selectedTicket.dateFermeture}
     ].map((item, index) => (
       <div
         key={index}

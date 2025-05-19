@@ -16,10 +16,10 @@ export default function Footer() {
           © {new Date().getFullYear()} Stb Banque
         </p>
         <div style={styles.socialIcons}>
-          <a href="#" style={styles.icon}><FaFacebookF /></a>
-          <a href="#" style={styles.icon}><FaInstagram /></a>
-          <a href="#" style={styles.icon}><FaTwitter /></a>
-          <a href="#" style={styles.icon}><FaLinkedinIn /></a>
+          <a href="https://www.facebook.com/stbbank/?locale=fr_FR" style={styles.icon}><FaFacebookF /></a>
+          <a href="https://www.instagram.com/stbbank/?hl=fr" style={styles.icon}><FaInstagram /></a>
+          <a href="https://x.com/STB_labanque/status/1509844079848398850" style={styles.icon}><FaTwitter /></a>
+          <a href="https://www.linkedin.com/company/stb-bank/?originalSubdomain=fr" style={styles.icon}><FaLinkedinIn /></a>
         </div>
       </div>
     </footer>

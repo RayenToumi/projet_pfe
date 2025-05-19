@@ -152,7 +152,7 @@ export default function LoginPage() {
           background: "white"
         }}>
           <h2 style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937", textAlign: "center" }}>
-            {showForgotPassword ? "Mot de passe oublié" : "Log In"}
+            {showForgotPassword ? "Mot de passe oublié" : "Se connecter"}
           </h2>
 
           {error && <div style={{ color: "red", marginBottom: "12px" }}>{error}</div>}
@@ -162,7 +162,7 @@ export default function LoginPage() {
             <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Email</label>
             <input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Entrez votre email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -180,10 +180,10 @@ export default function LoginPage() {
           {!showForgotPassword && (
             <>
               <div style={{ marginTop: "12px" }}>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Password</label>
+                <label style={{ display: "block", fontSize: "14px", fontWeight: "500", color: "#4b5563" }}>Mot de passe</label>
                 <input
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Entrez votre Mot de passe"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -201,7 +201,7 @@ export default function LoginPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <input type="checkbox" id="remember" />
-                  <label htmlFor="remember" style={{ marginLeft: "6px", fontSize: "14px", color: "#4b5563" }}>Remember me</label>
+                  <label htmlFor="remember" style={{ marginLeft: "6px", fontSize: "14px", color: "#4b5563" }}>Souviens-toi de moi</label>
                 </div>
                 <button type="button" onClick={() => setShowForgotPassword(true)} style={{
                   fontSize: "14px",
@@ -211,7 +211,7 @@ export default function LoginPage() {
                   border: "none",
                   cursor: "pointer"
                 }}>
-                  Forgot password?
+                  Mot de passe oublié ?
                 </button>
               </div>
             </>
@@ -231,7 +231,7 @@ export default function LoginPage() {
               cursor: loading ? "not-allowed" : "pointer"
             }}
           >
-            {loading ? "Chargement..." : showForgotPassword ? "Envoyer" : "LOG IN"}
+            {loading ? "Chargement..." : showForgotPassword ? "Envoyer" : "Se connecter"}
           </button>
 
           {!showForgotPassword && (
@@ -241,10 +241,8 @@ export default function LoginPage() {
                 <span style={{ margin: "0 8px", fontSize: "14px", color: "#6b7280" }}>OR</span>
                 <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
               </div>
-
-
               <p style={{ fontSize: "14px", textAlign: "center", color: "#6b7280", marginTop: "12px" }}>
-                Don't have an account? <a href="Register" style={{ color: "#3b82f6", textDecoration: "none" }}>Sign Up</a>
+                Vous n'avez pas de compte ? <a href="Register" style={{ color: "#3b82f6", textDecoration: "none" }}>S'inscrire</a>
               </p>
             </>
           )}
@@ -263,7 +261,7 @@ export default function LoginPage() {
                 cursor: "pointer"
               }}
             >
-              Back to Login
+              Retour à la connexion
             </button>
           )}
         </form>
