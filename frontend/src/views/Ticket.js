@@ -59,7 +59,7 @@ function NewTicketForm() {
         throw new Error("Vous devez être connecté pour créer un ticket");
       }
 
-      const response = await fetch("/addticket", {
+      const response = await fetch("/api/addticket", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

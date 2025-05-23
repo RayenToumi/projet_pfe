@@ -42,7 +42,7 @@ export default function Navbar() {
       }
   
       // Appel API avec gestion d'erreur améliorée
-      const response = await fetch(`/logout/${user._id}`, {
+      const response = await fetch(`/api/logout/${user._id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

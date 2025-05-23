@@ -18,8 +18,8 @@ export default function TechnicienTable({ color }) {
         
         // Appel parallèle aux deux endpoints
         const [usersResponse, scoresResponse] = await Promise.all([
-          fetch('/allusers'), // Sans token
-          fetch('/score', {  // Avec token
+          fetch('/api/allusers'), // Sans token
+          fetch('/api/score', {  // Avec token
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -235,7 +235,7 @@ export default function TechnicienTable({ color }) {
     }
   
     try {
-      const response = await fetch('/adduser', {
+      const response = await fetch('/api/adduser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -296,7 +296,7 @@ export default function TechnicienTable({ color }) {
     }
   
     try {
-      const response = await fetch(`/updateuser/${editingTechnicien.id}`, {
+      const response = await fetch(`/api/updateuser/${editingTechnicien.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -331,7 +331,7 @@ export default function TechnicienTable({ color }) {
 
   const confirmDelete = async () => {
     try {
-      const response = await fetch(`/deleteuser/${technicienIdToDelete}`, {
+      const response = await fetch(`/api/deleteuser/${technicienIdToDelete}`, {
         method: 'DELETE',
       });
   

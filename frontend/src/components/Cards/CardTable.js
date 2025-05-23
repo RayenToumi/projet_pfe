@@ -23,18 +23,16 @@ export default function CardTable({ color }) {
     specialite: "",
   });
   const [errors, setErrors] = useState({});
-
   const [editModalOuvert, setEditModalOuvert] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [editErrors, setEditErrors] = useState({});
-
   const [deleteModalOuvert, setDeleteModalOuvert] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('/allusers');
+        const response = await fetch('/api/allusers');
         const data = await response.json();
         const formattedUsers = data.map(user => ({
           id: user._id,
@@ -43,7 +41,8 @@ export default function CardTable({ color }) {
           email: user.email,
           telephone: user.tel,
           role: user.role,
-          password: ''
+          password: '',
+          specialite: user.specialite || '' 
         }));
         setItems(formattedUsers);
       } catch (error) {
@@ -73,42 +72,36 @@ export default function CardTable({ color }) {
   const validateForm = (user) => {
     const errors = {};
     
-    // Validation du nom
-if (!user.nom.trim()) {
-  errors.nom = "Le nom est obligatoire.";
-} else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.nom.trim())) {
-  errors.nom = "Le nom ne doit contenir que des lettres et des espaces.";
-}
+    if (!user.nom.trim()) {
+      errors.nom = "Le nom est obligatoire.";
+    } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.nom.trim())) {
+      errors.nom = "Le nom ne doit contenir que des lettres et des espaces.";
+    }
   
-    // Validation du prénom
     if (!user.prenom.trim()) {
       errors.prenom = "Le prénom est obligatoire.";
     } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.prenom)) {
       errors.prenom = "verifier bien le prenom";
     }
   
-    // Validation de l'email
     if (!user.email.trim()) {
       errors.email = "L'email est obligatoire.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
       errors.email = "verifier bien le format de l'email";
     }
   
-    // Validation du téléphone
     if (!user.telephone.trim()) {
       errors.telephone = "Le téléphone est obligatoire.";
     } else if (!/^[259]\d{7}$/.test(user.telephone)) {
       errors.telephone = "verifier bien le numero de telephone";
     }
   
-    // Validation du rôle
     if (!user.role) {
       errors.role = "il faut remplire le role.";
     }
   
-    // Validation spécialité pour technicien
     if (user.role === 'technicien' && !user.specialite.trim()) {
-      errors.specialite = "La spécialité est requise";
+      errors.specialite = "La spécialité est obligatoire";
     }
   
     return errors;
@@ -116,38 +109,43 @@ if (!user.nom.trim()) {
 
   const validateEditForm = (user) => {
     const errors = {};
-  
+
     if (!user.nom.trim()) {
       errors.nom = "Le nom est obligatoire.";
     } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.nom)) {
       errors.nom = "verifier bien le nom";
     }
-  
+
     if (!user.prenom.trim()) {
       errors.prenom = "Le prénom est obligatoire.";
     } else if (!/^[A-Za-zÀ-ÿ]+(?: [A-Za-zÀ-ÿ]+)*$/.test(user.prenom)) {
       errors.prenom = "verifier bien le prenom";
     }
-  
+
     if (!user.email.trim()) {
       errors.email = "L'email est obligatoire.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
       errors.email = "verifier l'email";
     }
-  
+
     if (!user.telephone.trim()) {
       errors.telephone = "Le numero de telephone et obligatoire.";
     } else if (!/^[259]\d{7}$/.test(user.telephone)) {
       errors.telephone = "verifier le numero de telephone";
     }
-  
+
     if (!user.role) {
       errors.role = "Le rôle est obligatoire.";
     }
+    
     if (user.password && user.password.length < 6) {
       errors.password = "Le mot de passe doit contenir au moins 6 caractères.";
     }
-  
+    
+    if (user.role === 'technicien' && !user.specialite?.trim()) {
+      errors.specialite = "La spécialité est obligatoire";
+    }
+
     return errors;
   };
 
@@ -156,17 +154,18 @@ if (!user.nom.trim()) {
     if (Object.keys(errors).length > 0) return setErrors(errors);
 
     try {
-      const userData = {
-        nom: newUser.nom,
-        prenom: newUser.prenom,
-        email: newUser.email,
-        tel: newUser.telephone,
-        password: newUser.password,
-        role: newUser.role,
-        specialite: newUser.role === 'technicien' ? newUser.specialite : undefined,
-      };
+   const userData = {
+  nom: newUser.nom,
+  prenom: newUser.prenom,
+  email: newUser.email,
+  tel: newUser.telephone,
+  password: newUser.password,
+  role: newUser.role,
+  // Correction ici : remplacer editingUser par newUser
+  specialite: newUser.role === 'technicien' ? newUser.specialite : undefined
+};
 
-      const response = await fetch('/adduser', {
+      const response = await fetch('/api/adduser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
@@ -175,16 +174,14 @@ if (!user.nom.trim()) {
       const data = await response.json();
 
       if (!response.ok) {
-        // Modification ici pour utiliser data.error
         throw new Error(data.error || 'Erreur inconnue');
       }
 
-      setItems([...items, {
-        id: data._id,
-        ...userData,
-        telephone: userData.tel,
-        specialite: userData.specialite
-      }]);
+    setItems([{ 
+  ...userData, 
+  id: data._id, // Utiliser l'ID retourné par l'API
+  telephone: userData.tel 
+}, ...items]);
       
       setSuccessMessage('Utilisateur ajouté avec succès');
       setShowSuccessMessage(true);
@@ -194,7 +191,6 @@ if (!user.nom.trim()) {
       
     } catch (error) {
       console.error("Erreur:", error);
-      // Modification de la condition pour une meilleure détection
       if (error.message.toLowerCase().includes('email')) {
         setErrors({ ...errors, email: "Cet email est déjà utilisé" });
       } else {
@@ -202,47 +198,50 @@ if (!user.nom.trim()) {
       }
     }
   };
+
   const handleEditSubmit = async () => {
     const errors = validateEditForm(editingUser);
     if (Object.keys(errors).length > 0) return setEditErrors(errors);
-  
+
     try {
-      // Récupérer l'utilisateur original
       const originalUser = items.find(item => item.id === editingUser.id);
       
-      // Vérifier si aucune modification n'a été faite
       const isUnchanged = 
         editingUser.nom === originalUser.nom &&
         editingUser.prenom === originalUser.prenom &&
+        editingUser.email === originalUser.email &&
         editingUser.telephone === originalUser.telephone &&
         editingUser.role === originalUser.role &&
+        editingUser.specialite === originalUser.specialite && 
         !editingUser.password;
-  
+
       if (isUnchanged) {
-        setSuccessMessage('Rien à changer - Aucune modification détectée');
+        setSuccessMessage('Aucune modification détectée');
         setShowSuccessMessage(true);
         setEditModalOuvert(false);
         return;
       }
-  
-      // Envoyer les modifications seulement si il y a des changements
-      const userData = {
-        nom: editingUser.nom,
-        prenom: editingUser.prenom,
-        email: editingUser.email,
-        tel: editingUser.telephone,
-        role: editingUser.role,
-        ...(editingUser.password && { password: editingUser.password })
-      };
-  
-      const response = await fetch(`/updateuser/${editingUser.id}`, {
+
+     const userData = {
+    nom: editingUser.nom,
+    prenom: editingUser.prenom,
+    email: editingUser.email,
+    tel: editingUser.telephone,
+    role: editingUser.role,
+    // Correction ici : remplacer newUser par editingUser
+    specialite: editingUser.role === 'technicien' ? editingUser.specialite : undefined,
+    ...(editingUser.password && { password: editingUser.password })
+  };
+
+
+      const response = await fetch(`/api/updateuser/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.error || 'Échec de la mise à jour');
       }
@@ -253,7 +252,8 @@ if (!user.nom.trim()) {
         item.id === editingUser.id ? { 
           ...item,
           ...userData,
-          telephone: userData.tel
+          telephone: userData.tel,
+          specialite: userData.specialite
         } : item
       ));
       setEditModalOuvert(false);
@@ -267,10 +267,9 @@ if (!user.nom.trim()) {
     }
   };
 
-
   const confirmDelete = async () => {
     try {
-      const response = await fetch(`/deleteuser/${userIdToDelete}`, {
+      const response = await fetch(`/api/deleteuser/${userIdToDelete}`, {
         method: 'DELETE'
       });
 
@@ -318,28 +317,27 @@ if (!user.nom.trim()) {
       color === "light" ? "bg-white" : "bg-slate-800 text-white"
     }`}>
       
-      {/* Toast Notification */}
       {showSuccessMessage && (
-  <div className="toast-message animate-fade-in">
-    <div className="toast-content">
-      <div className="toast-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" 
-             width="24" 
-             height="24" 
-             viewBox="0 0 24 24" 
-             fill="none" 
-             stroke="currentColor" 
-             strokeWidth="2" 
-             strokeLinecap="round" 
-             strokeLinejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-      </div>
-      <span className="toast-text">{successMessage}</span>
-    </div>
-  </div>
-)}
+        <div className="toast-message animate-fade-in">
+          <div className="toast-content">
+            <div className="toast-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" 
+                  width="24" 
+                  height="24" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+            <span className="toast-text">{successMessage}</span>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .gp-action-icon {
@@ -378,7 +376,6 @@ if (!user.nom.trim()) {
         .gp-add-button:hover {
           background-color: #0284c7;
         }
-
         .gp-modal-overlay {
           position: fixed;
           top: 0;
@@ -405,7 +402,6 @@ if (!user.nom.trim()) {
           align-items: center;
           margin-bottom: 1rem;
         }
-
         .gp-form-group {
           margin-bottom: 1.5rem;
         }
@@ -414,7 +410,6 @@ if (!user.nom.trim()) {
           padding: 0.5rem;
           border: 1px solid #ccc;
           border-radius: 0.375rem;
-          
         }
         .gp-disabled-input {
           background-color: #f3f4f6;
@@ -426,7 +421,6 @@ if (!user.nom.trim()) {
           border-radius: 0.375rem;
           display: block;
         }
-
         .gp-btn {
           padding: 0.5rem 1.25rem;
           border-radius: 0.375rem;
@@ -455,7 +449,6 @@ if (!user.nom.trim()) {
         .gp-btn-danger:hover {
           background-color: #b91c1c;
         }
-
         .gp-delete-modal-content {
           text-align: center;
           padding: 2rem;
@@ -466,79 +459,71 @@ if (!user.nom.trim()) {
           gap: 1rem;
           margin-top: 2rem;
         }
-    .toast-message {
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    background: linear-gradient(145deg, #1a4338, #0d2a23);
-    color: white;
-    border-radius: 8px;
-    padding: 18px 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    max-width: 400px;
-    font-family: 'Inter', sans-serif;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(6px);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    transform: translateY(20px);
-    opacity: 0;
-  }
-
-  .toast-content {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .toast-icon {
-    color: #76e0a7;
-    display: flex;
-    align-items: center;
-  }
-
-  .toast-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  .toast-text {
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 1.4;
-    color: rgba(255, 255, 255, 0.95);
-    letter-spacing: 0.2px;
-  }
-
-  @keyframes fade-in {
-    0% {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.3s ease-out forwards;
-  }
-
-  @keyframes fade-out {
-    0% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-  }
-`}</style>
-
+        .toast-message {
+          position: fixed;
+          bottom: 40px;
+          right: 40px;
+          background: linear-gradient(145deg, #1a4338, #0d2a23);
+          color: white;
+          border-radius: 8px;
+          padding: 18px 24px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          z-index: 1000;
+          max-width: 400px;
+          font-family: 'Inter', sans-serif;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(6px);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        .toast-content {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+        .toast-icon {
+          color: #76e0a7;
+          display: flex;
+          align-items: center;
+        }
+        .toast-icon svg {
+          width: 22px;
+          height: 22px;
+        }
+        .toast-text {
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 1.4;
+          color: rgba(255, 255, 255, 0.95);
+          letter-spacing: 0.2px;
+        }
+        @keyframes fade-in {
+          0% {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          100% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out forwards;
+        }
+        @keyframes fade-out {
+          0% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+        }
+      `}</style>
 
       <div className="px-6 pt-6 border-b-2 border-gray-300">
         <h1 className={`text-2xl font-bold text-center ${
@@ -645,117 +630,122 @@ if (!user.nom.trim()) {
       </div>
 
       {modalOuvert && (
-  <div className="gp-modal-overlay">
-    <div className="gp-modal-container">
-      <div className="gp-modal-header">
-        <h2 className="text-xl font-bold">Créer un utilisateur</h2>
-        <button onClick={() => setModalOuvert(false)}>
-          <X size={24} />
-        </button>
-      </div>
+        <div className="gp-modal-overlay">
+          <div className="gp-modal-container">
+            <div className="gp-modal-header">
+              <h2 className="text-xl font-bold">Créer un utilisateur</h2>
+              <button onClick={() => setModalOuvert(false)}>
+                <X size={24} />
+              </button>
+            </div>
 
-      <div>
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Nom</label>
-          <input
-            type="text"
-            name="nom"
-            value={newUser.nom}
-            onChange={handleChange}
-            className="gp-form-input"
-          />
-          {errors.nom && <p className="text-red-500 text-sm">{errors.nom}</p>}
-        </div>
+            <div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Nom</label>
+                <input
+                  type="text"
+                  name="nom"
+                  value={newUser.nom}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                />
+                {errors.nom && <p className="text-red-500 text-sm">{errors.nom}</p>}
+              </div>
 
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Prénom</label>
-          <input
-            type="text"
-            name="prenom"
-            value={newUser.prenom}
-            onChange={handleChange}
-            className="gp-form-input"
-          />
-          {errors.prenom && <p className="text-red-500 text-sm">{errors.prenom}</p>}
-        </div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Prénom</label>
+                <input
+                  type="text"
+                  name="prenom"
+                  value={newUser.prenom}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                />
+                {errors.prenom && <p className="text-red-500 text-sm">{errors.prenom}</p>}
+              </div>
 
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={newUser.email}
-            onChange={handleChange}
-            className="gp-form-input"
-          />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-        </div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={newUser.email}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                />
+                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              </div>
 
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Téléphone</label>
-          <input
-            type="text"
-            name="telephone"
-            value={newUser.telephone}
-            onChange={handleChange}
-            className="gp-form-input"
-            maxLength="8"
-          />
-          {errors.telephone && <p className="text-red-500 text-sm">{errors.telephone}</p>}
-        </div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Téléphone</label>
+                <input
+                  type="text"
+                  name="telephone"
+                  value={newUser.telephone}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                  maxLength="8"
+                />
+                {errors.telephone && <p className="text-red-500 text-sm">{errors.telephone}</p>}
+              </div>
 
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Rôle</label>
-          <select
-            name="role"
-            value={newUser.role}
-            onChange={handleChange}
-            className="gp-form-input"
-          >
-            <option value="">-- Sélectionner --</option>
-            <option value="admin">Admin</option>
-            <option value="utilisateur">Client</option>
-            <option value="technicien">Technicien</option>
-          </select>
-          {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
-        </div>
+              <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Rôle</label>
+                <select
+                  name="role"
+                  value={newUser.role}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                >
+                  <option value="">-- Sélectionner --</option>
+                  <option value="admin">Admin</option>
+                  <option value="utilisateur">Client</option>
+                  <option value="technicien">Technicien</option>
+                </select>
+                {errors.role && <p className="text-red-500 text-sm">{errors.role}</p>}
+              </div>
 
-        {newUser.role === 'technicien' && (
-          <div className="gp-form-group">
-            <label className="block font-semibold mb-1">Spécialité</label>
-            <input
-              type="text"
-              name="specialite"
-              value={newUser.specialite}
-              onChange={handleChange}
-              className="gp-form-input"
-            />
-            {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
+              {newUser.role === 'technicien' && (
+                <div className="gp-form-group">
+                <label className="block font-semibold mb-1">Spécialité</label>
+                <select
+                  name="specialite"
+                  value={newUser.specialite}
+                  onChange={handleChange}
+                  className="gp-form-input"
+                >
+                  <option value="">-- Sélectionner --</option>
+                  <option value="Informatique">Informatique</option>
+                  <option value="Support">Support</option>
+                  <option value="Reseau">Réseau</option>
+                  <option value="DAB">DAB</option>
+                </select>
+                {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
+                </div>
+              )}
+
+              {errors.general && (
+                <p className="text-red-500 text-sm mt-4">{errors.general}</p>
+              )}
+
+              <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
+                <button 
+                  onClick={() => setModalOuvert(false)} 
+                  className="gp-btn gp-btn-cancel"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleCreateSubmit} 
+                  className="gp-btn gp-btn-save"
+                >
+                  Ajouter
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-
-        {errors.general && (
-          <p className="text-red-500 text-sm mt-4">{errors.general}</p>
-        )}
-
-        <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
-          <button 
-            onClick={() => setModalOuvert(false)} 
-            className="gp-btn gp-btn-cancel"
-          >
-            Annuler
-          </button>
-          <button 
-            onClick={handleCreateSubmit} 
-            className="gp-btn gp-btn-save"
-          >
-            Ajouter
-          </button>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {editModalOuvert && editingUser && (
         <div className="gp-modal-overlay">
@@ -810,7 +800,7 @@ if (!user.nom.trim()) {
               </div>
 
               <div className="gp-form-group">
-              <label className="block font-semibold mb-1">Téléphone</label>
+                <label className="block font-semibold mb-1">Téléphone</label>
                 <input
                   type="text"
                   name="telephone"
@@ -825,13 +815,32 @@ if (!user.nom.trim()) {
               <div className="gp-form-group">
                 <label className="block font-semibold mb-1">Mot de passe</label>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={editingUser.password || ''}
                   onChange={handleEditChange}
                   className="gp-form-input"
                   placeholder="Nouveau mot de passe"
                 />
+                <button
+                  type="button"
+                  onClick={togglePassword}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600"
+                  aria-label="Afficher ou masquer le mot de passe"
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.325.26-2.587.725-3.75m1.45-2.225A9.956 9.956 0 0112 5c5.523 0 10 4.477 10 10a9.956 9.956 0 01-2.05 6.025M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2"/>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
+                </button>
+                {editErrors.password && <p className="text-red-500 text-sm">{editErrors.password}</p>}
               </div>
 
               <div className="gp-form-group">
@@ -843,11 +852,32 @@ if (!user.nom.trim()) {
                   className="gp-form-input"
                 >
                   <option value="admin">Admin</option>
-                  <option value="utilisateur">Client</option>
+                  <option value="Client">Client</option>
                   <option value="technicien">Technicien</option>
                 </select>
-
               </div>
+{editingUser?.role === 'technicien' && (
+  <div className="gp-form-group">
+    <label className="block font-semibold mb-1">Spécialité</label>
+    <select
+      name="specialite"
+      value={editingUser.specialite || ''}
+      onChange={handleEditChange}
+      className="gp-form-input"
+    >
+      <option value="">-- Sélectionner --</option>
+      <option value="Informatique">Informatique</option>
+      <option value="Réseau">Réseau</option>
+      <option value="DAB">DAB</option>
+      <option value="Support">Support</option>
+    </select>
+    {editErrors.specialite && <p className="text-red-500 text-sm">{editErrors.specialite}</p>}
+  </div>
+)}
+
+              {editErrors.general && (
+                <p className="text-red-500 text-sm mt-4">{editErrors.general}</p>
+              )}
 
               <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
                 <button 
@@ -868,137 +898,7 @@ if (!user.nom.trim()) {
         </div>
       )}
 
-{editModalOuvert && editingUser && (
-  <div className="gp-modal-overlay">
-    <div className="gp-modal-container">
-      <div className="gp-modal-header">
-        <h2 className="text-xl font-bold">Modifier l'utilisateur</h2>
-        <button onClick={() => setEditModalOuvert(false)}>
-          <X size={24} />
-        </button>
-      </div>
-
-      <div>
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">ID</label>
-          <div className="gp-readonly-text">{editingUser.id}</div>
-        </div>
-
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Nom</label>
-          <input
-            type="text"
-            name="nom"
-            value={editingUser.nom}
-            onChange={handleEditChange}
-            className="gp-form-input"
-          />
-          {editErrors.nom && <p className="text-red-500 text-sm">{editErrors.nom}</p>}
-        </div>
-
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Prénom</label>
-          <input
-            type="text"
-            name="prenom"
-            value={editingUser.prenom}
-            onChange={handleEditChange}
-            className="gp-form-input"
-          />
-          {editErrors.prenom && <p className="text-red-500 text-sm">{editErrors.prenom}</p>}
-        </div>
-
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Email</label>
-          <div className="gp-readonly-text">{editingUser.email}</div>
-        </div>
-
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Téléphone</label>
-          <input
-                  type="text"
-                  name="telephone"
-                  value={editingUser.telephone}
-                  onChange={handleEditChange}
-                  className="gp-form-input"
-                  maxLength="8"
-                />
-          {editErrors.telephone && <p className="text-red-500 text-sm">{editErrors.telephone}</p>}
-        </div>
-
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Mot de passe</label>
-          <input
-            type={showPassword ? 'text' : 'password'}
-            name="password"
-            value={editingUser.password || ''}
-            onChange={handleEditChange}
-            className="gp-form-input"
-            placeholder="Nouveau mot de passe"
-        
-          />
-          {editErrors.password && <p className="text-red-500 text-sm">{editErrors.password}</p>}
-  <button
-    type="button"
-    onClick={togglePassword}
-    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600"
-    aria-label="Afficher ou masquer le mot de passe"
-  >
-    {showPassword ? (
-      // œil barré
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.325.26-2.587.725-3.75m1.45-2.225A9.956 9.956 0 0112 5c5.523 0 10 4.477 10 10a9.956 9.956 0 01-2.05 6.025M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2"/>
-      </svg>
-    ) : (
-      // œil ouvert
-      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z" />
-      </svg>
-    )}
-  </button>
-          
-        </div>
-
-        <div className="gp-form-group">
-          <label className="block font-semibold mb-1">Rôle</label>
-          <select
-            name="role"
-            value={editingUser.role}
-            onChange={handleEditChange}
-            className="gp-form-input"
-          >
-            <option value="admin">Admin</option>
-            <option value="utilisateur">Client</option>
-            <option value="technicien">Technicien</option>
-          </select>
-          {editErrors.role && <p className="text-red-500 text-sm">{editErrors.role}</p>}
-        </div>
-
-        {editErrors.general && (
-          <p className="text-red-500 text-sm mt-4">{editErrors.general}</p>
-        )}
-
-        <div className="flex justify-end mt-4" style={{ gap: "12px" }}>
-          <button 
-            onClick={() => setEditModalOuvert(false)} 
-            className="gp-btn gp-btn-cancel"
-          >
-            Annuler
-          </button>
-          <button 
-            onClick={handleEditSubmit} 
-            className="gp-btn gp-btn-save"
-          >
-            Enregistrer
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
- {deleteModalOuvert && (
+      {deleteModalOuvert && (
         <div className="gp-modal-overlay">
           <div className="gp-modal-container">
             <div className="gp-modal-header">
@@ -1046,7 +946,6 @@ if (!user.nom.trim()) {
           </div>
         </div>
       )}
-
 
     </div>
   );

@@ -28,7 +28,7 @@ const CalendarComponent = () => {
           return;
         }
 
-        const response = await fetch('/alltickets', {
+        const response = await fetch('/api/alltickets', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

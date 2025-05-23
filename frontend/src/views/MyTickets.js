@@ -4,84 +4,63 @@ import IndexNavbar from "components/Navbars/IndexNavbar.js";
 import Footerr from "components/Footers/Footerr";
 
 function MyTickets() {
-  
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [searchId, setSearchId] = useState("");
-  const [feedback, setFeedback] = useState({  commentaire: "" });
+  const [feedback, setFeedback] = useState({ commentaire: "" });
   const [submitted, setSubmitted] = useState(false);
 
   const getShortCode = (id) => {
     const strId = String(id);
-    if (!strId || strId.length < 10) return "XXXX";
-    return strId.substring(6, 10);
+    return strId.length >= 10 ? strId.substring(6, 10) : "XXXX";
   };
 
   const handleSubmitFeedback = async () => {
-    console.log("Feedback soumis :", {
-      ticketId: selectedTicket._id,
-      ...feedback,
-    });
-  
     try {
-      // Récupérer le token JWT et l'ID de l'utilisateur si nécessaire
       const token = localStorage.getItem('jwt_token');
-  
-      // Faire la requête POST vers votre API pour ajouter le commentaire
-      const response = await fetch('/addcom', {
+      const response = await fetch('/api/addcom', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ticketId: selectedTicket._id,  // Passer l'ID du ticket ici
-          commentaire: feedback.commentaire,  // Passer le commentaire
+          ticketId: selectedTicket._id,
+          commentaire: feedback.commentaire,
         }),
       });
-  
+
       if (response.ok) {
-        // Si la requête réussit, mettre à jour l'état
+        // Mettre à jour les tickets locaux
+        const updatedTickets = tickets.map(t => 
+          t._id === selectedTicket._id 
+            ? { ...t, commentaireUser: { commentaire: feedback.commentaire } } 
+            : t
+        );
+        setTickets(updatedTickets);
+        
         setSubmitted(true);
-        setFeedback({ commentaire: "" });  // Réinitialiser le champ commentaire
-       
-      } else {
-        const errorData = await response.json();
-        alert(`Erreur : ${errorData.message}`);
+        setFeedback({ commentaire: "" });
+        setSelectedTicket(prev => ({ ...prev, commentaireUser: { commentaire: feedback.commentaire } }));
       }
     } catch (error) {
       console.error("Erreur lors de l'envoi du commentaire :", error);
-      alert("Une erreur est survenue lors de l'envoi de votre commentaire.");
     }
   };
-  
-  
-
-    
 
   useEffect(() => {
-    document.body.style.margin = "0";
-    document.body.style.minHeight = "100vh";
-    document.body.style.display = "flex";
-    document.body.style.flexDirection = "column";
-  
     const fetchTickets = async () => {
       try {
         const token = localStorage.getItem('jwt_token');
-        const user = JSON.parse(localStorage.getItem('user')); 
-        
-        const response = await fetch(`/user/${user._id}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
+        const user = JSON.parse(localStorage.getItem('user'));
+        const response = await fetch(`/api/user/${user._id}`, {
+          headers: { "Authorization": `Bearer ${token}` }
         });
-
         const data = await response.json();
         setTickets(data);
       } catch (error) {
         console.error("Error fetching tickets:", error);
-        // Fallback vers le localStorage
         const localTickets = JSON.parse(localStorage.getItem("tickets")) || [];
         setTickets(localTickets);
       } finally {
@@ -91,81 +70,63 @@ function MyTickets() {
 
     fetchTickets();
   }, []);
+
   useEffect(() => {
-  const fetchCommentaires = async () => {
-    if (!selectedTicket) return;
+    const fetchCommentaires = async () => {
+      if (!selectedTicket?._id) return;
 
-    try {
-      const response = await fetch('/getcom');
-      const result = await response.json();
+      try {
+        const response = await fetch(`/api/getcom?ticketId=${selectedTicket._id}`);
+        const result = await response.json();
 
-      if (result.success) {
-        const commentairesTicket = result.data.filter(
-          (c) => c.ticket === selectedTicket._id
-        );
+        if (result.success) {
+          const commentairesTicket = result.data.filter(
+            c => c.ticket === selectedTicket._id
+          );
 
-        if (commentairesTicket.length > 0) {
-          setSubmitted(true); // Ne pas réafficher le formulaire
-          setSelectedTicket((prev) => ({
-            ...prev,
-            commentaireUser: commentairesTicket[0], // pour affichage
-          }));
+          if (commentairesTicket.length > 0) {
+            setSubmitted(true);
+            setSelectedTicket(prev => ({
+              ...prev,
+              commentaireUser: commentairesTicket[0],
+            }));
+          }
         }
+      } catch (error) {
+        console.error("Erreur lors du chargement des commentaires :", error);
       }
-    } catch (error) {
-      console.error("Erreur lors du chargement des commentaires :", error);
-    }
-  };
+    };
 
-  fetchCommentaires();
-}, [selectedTicket]);
-
-  
- 
-  
-  
-  
+    fetchCommentaires();
+  }, [selectedTicket?._id]);
 
   const badgeStyle = (status) => {
     const statusNormalized = status?.toLowerCase() || "";
+    const styles = {
+      ouvert: { bg: "#FEE2E2", color: "#DC2626", border: "#DC2626" },
+      "en cours": { bg: "#FFEDD5", color: "#C2410C", border: "#C2410C" },
+      fermé: { bg: "#DCFCE7", color: "#065F46", border: "#065F46" },
+      default: { bg: "#FFFFFF", color: "#000000", border: "#000000" }
+    };
+    
+    const { bg, color, border } = styles[statusNormalized] || styles.default;
+    
     return {
       padding: "0.25rem 0.5rem",
       borderRadius: "0px",
       fontSize: "0.75rem",
       fontWeight: "500",
-      backgroundColor:
-        statusNormalized === "ouvert"
-          ? "#FEE2E2"
-          : statusNormalized === "en cours"
-          ? "#FFEDD5"
-          : statusNormalized === "fermé"
-          ? "#DCFCE7"
-          : "#FFFFFF",
-      color:
-        statusNormalized === "ouvert"
-          ? "#DC2626"
-          : statusNormalized === "en cours"
-          ? "#C2410C"
-          : statusNormalized === "fermé"
-          ? "#065F46"
-          : "#000000",
+      backgroundColor: bg,
+      color: color,
       textAlign: "center",
       minWidth: "80px",
       display: "inline-block",
-      border: "1px solid",
-      borderColor:
-        statusNormalized === "ouvert"
-          ? "#DC2626"
-          : statusNormalized === "en cours"
-          ? "#C2410C"
-          : statusNormalized === "fermé"
-          ? "#065F46"
-          : "#000000",
+      border: `1px solid ${border}`,
     };
   };
 
   const filteredTickets = tickets.filter(
-    (ticket) => searchId === "" || ticket._id?.toString().includes(searchId)
+    ticket => searchId === "" || ticket._id?.toString().includes(searchId)
   );
 
   return (
@@ -173,7 +134,6 @@ function MyTickets() {
       <IndexNavbar />
       <div style={container}>
         <div style={contentWrapper}>
-         
           <h1 style={title}>Espace Support Client</h1>
           <p style={subtitle}>Consultez vos tickets et suivez leur avancement</p>
 
@@ -183,14 +143,7 @@ function MyTickets() {
               placeholder="Rechercher par numéro de ticket"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
-              style={{
-                padding: "0.5rem",
-                width: "60%",
-                maxWidth: "300px",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-                fontSize: "1rem",
-              }}
+              style={searchInput}
             />
           </div>
 
@@ -201,10 +154,10 @@ function MyTickets() {
                   key={ticket._id}
                   style={ticketItem}
                   onClick={() => {
-                    setSelectedTicket(ticket);
+                    const fullTicket = tickets.find(t => t._id === ticket._id);
+                    setSelectedTicket({ ...fullTicket, _key: Date.now() });
                     setSubmitted(false);
-                    setFeedback({ 
-                       commentaire: "" });
+                    setFeedback({ commentaire: "" });
                   }}
                 >
                   <div style={ticketHeader}>
@@ -223,10 +176,17 @@ function MyTickets() {
             </div>
 
             {selectedTicket && (
-              <div style={detailsPanel}>
+              <div style={detailsPanel} key={selectedTicket._key}>
                 <div style={detailsHeader}>
                   <h2 style={detailsTitle}>Détails du ticket</h2>
-                  <button style={closeButton} onClick={() => setSelectedTicket(null)}>
+                  <button
+                    style={closeButton}
+                    onClick={() => {
+                      setSelectedTicket(null);
+                      setSubmitted(false);
+                      setFeedback({ commentaire: "" });
+                    }}
+                  >
                     ×
                   </button>
                 </div>
@@ -250,63 +210,37 @@ function MyTickets() {
                     <p>{selectedTicket.description}</p>
                   </div>
 
-                  {/* Évaluation si ticket fermé */}
-                 {selectedTicket.statut?.toLowerCase() === "fermé" && (
-  <div style={{ marginTop: "2rem", borderTop: "1px solid #ddd", paddingTop: "1rem" }}>
-    <h4 style={{ fontSize: "1.1rem", marginBottom: "0.5rem", color: "#1a237e" }}>
-      Évaluez l’intervention :
-    </h4>
-
-    {submitted ? (
-      <div style={{ backgroundColor: "#f1f1f1", padding: "1rem", borderRadius: "6px" }}>
-        <p><strong>Commentaire soumis :</strong></p>
-        <p style={{ color: "#333", fontStyle: "italic" }}>
-          {selectedTicket.commentaireUser?.commentaire}
-        </p>
-      </div>
-    ) : (
-      <>
-        <div style={{ marginBottom: "1rem" }}>
-          <label style={{
-            fontWeight: "bold",
-            display: "block",
-            marginBottom: "0.5rem",
-          }}>
-            Commentaire :
-          </label>
-          <textarea
-            rows="3"
-            value={feedback.commentaire}
-            onChange={(e) =>
-              setFeedback({ ...feedback, commentaire: e.target.value })
-            }
-            style={{
-              width: "100%",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              padding: "0.5rem",
-              resize: "vertical",
-            }}
-          />
-        </div>
-
-        <button
-          onClick={handleSubmitFeedback}
-          style={{
-            backgroundColor: "#1a237e",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            padding: "0.5rem 1rem",
-            cursor: "pointer",
-          }}
-        >
-          Envoyer
-        </button>
-      </>
-    )}
-  </div>
-)}
+                  {selectedTicket.statut?.toLowerCase() === "fermé" && (
+                    <div style={feedbackSection}>
+                      <h4 style={feedbackTitle}>Évaluez l’intervention :</h4>
+                      {submitted ? (
+                        <div style={feedbackSubmitted}>
+                          <p><strong>Commentaire soumis :</strong></p>
+                          <p style={feedbackComment}>
+                            {selectedTicket.commentaireUser?.commentaire}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={feedbackInput}>
+                            <label style={feedbackLabel}>Commentaire :</label>
+                            <textarea
+                              rows="3"
+                              value={feedback.commentaire}
+                              onChange={(e) => setFeedback({ commentaire: e.target.value })}
+                              style={textareaStyle}
+                            />
+                          </div>
+                          <button
+                            onClick={handleSubmitFeedback}
+                            style={submitButton}
+                          >
+                            Envoyer
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -318,7 +252,7 @@ function MyTickets() {
   );
 }
 
-// Styles (inchangés)
+// Styles
 const container = {
   minHeight: "100vh",
   flex: 1,
@@ -331,7 +265,6 @@ const container = {
 };
 
 const contentWrapper = { width: "100%", maxWidth: "800px" };
-
 const title = {
   color: "#1a237e",
   fontSize: "2.5rem",
@@ -396,5 +329,55 @@ const detailRow = {
 };
 const detailLabel = { color: "#666", fontWeight: "bold", marginRight: "1rem" };
 const detailDescription = { marginTop: "2rem" };
+const searchInput = {
+  padding: "0.5rem",
+  width: "60%",
+  maxWidth: "300px",
+  borderRadius: "6px",
+  border: "1px solid #ccc",
+  fontSize: "1rem",
+};
+const feedbackSection = {
+  marginTop: "2rem",
+  borderTop: "1px solid #ddd",
+  paddingTop: "1rem",
+};
+const feedbackTitle = {
+  fontSize: "1.1rem",
+  marginBottom: "0.5rem",
+  color: "#1a237e",
+};
+const feedbackSubmitted = {
+  backgroundColor: "#f1f1f1",
+  padding: "1rem",
+  borderRadius: "6px",
+};
+const feedbackComment = {
+  color: "#333",
+  fontStyle: "italic",
+};
+const feedbackInput = {
+  marginBottom: "1rem",
+};
+const feedbackLabel = {
+  fontWeight: "bold",
+  display: "block",
+  marginBottom: "0.5rem",
+};
+const textareaStyle = {
+  width: "100%",
+  borderRadius: "4px",
+  border: "1px solid #ccc",
+  padding: "0.5rem",
+  resize: "vertical",
+};
+const submitButton = {
+  backgroundColor: "#1a237e",
+  color: "#fff",
+  border: "none",
+  borderRadius: "4px",
+  padding: "0.5rem 1rem",
+  cursor: "pointer",
+};
 
 export default MyTickets;

@@ -41,7 +41,7 @@ export default function TicketTable({ color }) {
       try {
         const token = localStorage.getItem('jwt_token');
 
-        const { data } = await axios.get('/alltickets', {
+        const { data } = await axios.get('/api/alltickets', {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -155,7 +155,7 @@ export default function TicketTable({ color }) {
   
     try {
       const token = localStorage.getItem("jwt_token");
-      const response = await axios.post('/addticket', {
+      const response = await axios.post('/api/addticket', {
         sujet: newTicket.subject,
         type: newTicket.type,
         urgence: newTicket.urgency,
@@ -193,7 +193,7 @@ export default function TicketTable({ color }) {
   
     try {
       const token = localStorage.getItem("jwt_token");
-      await axios.put(`/updateticket/${editingTicket.id}`, {
+      await axios.put(`/api/updateticket/${editingTicket.id}`, {
         sujet: editingTicket.subject,
         type: editingTicket.type,
         description: editingTicket.description,
@@ -223,7 +223,7 @@ export default function TicketTable({ color }) {
   const confirmDelete = async () => {
     try {
       const token = localStorage.getItem("jwt_token");
-      await axios.delete(`/deleteticket/${ticketToDelete}`, {
+      await axios.delete(`/api/deleteticket/${ticketToDelete}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
   

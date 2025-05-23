@@ -18,7 +18,7 @@ export default function AvisClientTable({ color }) {
         }
   
         // Effectuer la requête avec le header Authorization
-        const response = await fetch('/comtec', {
+        const response = await fetch('/api/comtec', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

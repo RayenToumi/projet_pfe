@@ -71,7 +71,7 @@ module.exports.addUser = async (req, res) => {
 
     // Envoi de l'email comme avant
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"STB Banque de Tunisie" <${process.env.EMAIL_USER}>`,
       to: userAdded.email,
       subject: 'Création de votre compte STB',
       text: `Bonjour ${userAdded.prenom},\n\nVotre compte a été créé avec succès.\nVoici votre mot de passe : ${rawPassword}\n\nMerci.`,
@@ -132,7 +132,7 @@ module.exports.deleteUser = async (req, res) => {
 module.exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nom, prenom, email, password, tel, role, actif } = req.body;
+    const { nom, prenom, email, password, tel, role, actif ,specialite } = req.body;
 
     const user = await userModal.findById(id);
     if (!user) {
@@ -141,7 +141,10 @@ module.exports.updateUser = async (req, res) => {
 
     const modifications = [];
     let rawPassword = null;
-
+      if (specialite !== undefined && specialite !== user.specialite) {
+      modifications.push(`Spécialité: ${user.specialite || 'Aucune'} → ${specialite}`);
+      user.specialite = role === 'technicien' ? specialite : null;
+    }
     // Vérifier l'unicité de l'email
     if (email && email !== user.email) {
       const existingUser = await userModal.findOne({ email });
@@ -160,6 +163,14 @@ module.exports.updateUser = async (req, res) => {
       modifications.push(`Prénom: ${user.prenom} → ${prenom}`);
       user.prenom = prenom;
     }
+    if (email && email !== user.email) {
+  const existingUser = await userModal.findOne({ email });
+  if (existingUser) {
+    return res.status(400).json({ error: "Email déjà utilisé" });
+  }
+  modifications.push(`Email: ${user.email} → ${email}`);
+  user.email = email; // Ceci est correct
+}
     if (tel && tel !== user.tel) {
       modifications.push(`Téléphone: ${user.tel} → ${tel}`);
       user.tel = tel;
@@ -168,6 +179,7 @@ module.exports.updateUser = async (req, res) => {
       modifications.push(`Rôle: ${user.role} → ${role}`);
       user.role = role;
     }
+    
 
     // Ne mettre à jour le mot de passe que si un nouveau mot de passe est fourni
     if (password && password !== user.password) {
@@ -185,7 +197,7 @@ module.exports.updateUser = async (req, res) => {
     // Email de notification si quelque chose a été modifié
     if (modifications.length > 0) {
       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+        from: `"STB Banque de Tunisie" <${process.env.EMAIL_USER}>`,
         to: updatedUser.email,
         subject: "Mise à jour de votre compte STB",
         text: `Bonjour ${updatedUser.prenom},\n\nVoici les informations mises à jour pour votre compte :\n\n${modifications.join("\n")}${rawPassword ? `\n\nNouveau mot de passe : ${rawPassword}` : ""}\n\nMerci de vérifier vos données.`,
@@ -336,7 +348,7 @@ module.exports.resetPasswordByEmail = async (req, res) => {
     await user.save(); // Le hook hash automatiquement
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"STB Banque de Tunisie" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Réinitialisation de votre mot de passe STB',
       html: `

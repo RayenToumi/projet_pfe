@@ -44,7 +44,7 @@ export default function TicketTabletech({ color }) {
     try {
       const token = localStorage.getItem("jwt_token");
       await axios.put(
-        `/updateticket/${id}`,
+        `/api/updateticket/${id}`,
         { statut: "en cours" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -69,7 +69,7 @@ export default function TicketTabletech({ color }) {
     try {
       const token = localStorage.getItem("jwt_token");
       await axios.put(
-        `/updateticket/${id}`,
+        `/api/updateticket/${id}`,
         { statut: "fermé" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -99,7 +99,7 @@ export default function TicketTabletech({ color }) {
       try {
         const token = localStorage.getItem('jwt_token');
 
-const { data } = await axios.get('/alltickets', {
+const { data } = await axios.get('/api/alltickets', {
   headers: {
     Authorization: `Bearer ${token}`
   }
@@ -174,7 +174,7 @@ const { data } = await axios.get('/alltickets', {
       const token = localStorage.getItem("jwt_token");
       if (!token) throw new Error("Authentification requise");
   
-      const response = await axios.post('/addticket', {
+      const response = await axios.post('/api/addticket', {
         sujet: newTicket.subject,
         type: newTicket.type,
         urgence: newTicket.urgency,

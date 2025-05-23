@@ -38,7 +38,7 @@ export default function Sidebar() {
         throw new Error('Données utilisateur corrompues');
       }
 
-      const response = await fetch(`/logout/${user._id}`, {
+      const response = await fetch(`/api/logout/${user._id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

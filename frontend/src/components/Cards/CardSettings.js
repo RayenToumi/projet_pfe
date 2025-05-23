@@ -28,7 +28,7 @@ export default function CardSettings() {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("jwt_token");
-        const response = await fetch("/me", {
+        const response = await fetch("/api/me", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -152,7 +152,7 @@ export default function CardSettings() {
 
     const updateUserDataOnServer = async (dataToSend) => {
       try {
-        const response = await fetch(`/updateuser/${userData._id}`, {
+        const response = await fetch(`/api/updateuser/${userData._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(dataToSend),

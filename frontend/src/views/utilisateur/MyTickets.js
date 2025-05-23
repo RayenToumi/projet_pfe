@@ -29,7 +29,7 @@ function MyTickets() {
       const token = localStorage.getItem('jwt_token');
   
       // Faire la requête POST vers votre API pour ajouter le commentaire
-      const response = await fetch('/addcom', {
+      const response = await fetch('/api/addcom', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ function MyTickets() {
         const token = localStorage.getItem('jwt_token');
         const user = JSON.parse(localStorage.getItem('user')); 
         
-        const response = await fetch(`/user/${user._id}`, {
+        const response = await fetch(`/api/user/${user._id}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -96,7 +96,7 @@ function MyTickets() {
     if (!selectedTicket) return;
 
     try {
-      const response = await fetch('/getcom');
+      const response = await fetch('/api/getcom');
       const result = await response.json();
 
       if (result.success) {

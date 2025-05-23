@@ -6,7 +6,7 @@ export default function HeaderStats() {
 
   useEffect(() => {
     // appelle ton backend ici
-    fetch("/stats")
+    fetch("/api/stats")
       .then((res) => res.json())
       .then((data) => setStats(data))
       .catch((err) => console.error("Erreur:", err));

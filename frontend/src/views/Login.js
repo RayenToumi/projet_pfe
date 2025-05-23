@@ -27,7 +27,7 @@ export default function LoginPage() {
     setPasswordError("");
 
     try {
-      const loginResponse = await fetch("/login", {
+      const loginResponse = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch("/reset-password", {
+      const response = await fetch("/api/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

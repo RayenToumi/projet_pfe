@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { FaGoogle } from "react-icons/fa";
 import axios from 'axios';
-
+import { useHistory } from 'react-router-dom';
 export default function Register() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+const history = useHistory();
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
@@ -53,7 +54,7 @@ export default function Register() {
     };
 
     try {
-      const response = await axios.post("/adduser", userData);
+      const response = await axios.post("/api/adduser", userData);
       console.log("Utilisateur ajouté:", response.data);
       
       // Afficher un message de succès
@@ -63,6 +64,7 @@ export default function Register() {
       // Fermer le toast après 5 secondes
       setTimeout(() => {
         setShowSuccessMessage(false);
+     history.push("/login");
       }, 5000);
 
     } catch (error) {
@@ -144,17 +146,7 @@ export default function Register() {
             Créer mon compte
           </button>
 
-          <div style={{ display: "flex", alignItems: "center", margin: "16px 0" }}>
-            <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
-            <span style={{ margin: "0 8px", fontSize: "14px", color: "#6b7280" }}>OU</span>
-            <div style={{ flex: "1", height: "1px", background: "#d1d5db" }}></div>
-          </div>
 
-          <button
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", border: "1px solid #d1d5db", padding: "10px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", background: "white" }}
-          >
-            <FaGoogle style={{ color: "#3b82f6" }} /> Continuer avec Google
-          </button>
 
           <p style={{ fontSize: "14px", textAlign: "center", color: "#6b7280", marginTop: "12px" }}>
             Vous avez déjà un compte ? <a href="./login" style={{ color: "#3b82f6", textDecoration: "none" }}>Connectez-vous</a>

@@ -28,7 +28,9 @@ services:
       - "3000:3000"                        # Port exposé pour le frontend
     volumes:
       - ./frontend:/app                    # Monte le code source du frontend
-      - /app/node_modules                  # Évite l'écrasement des dépendances
+      - /app/node_modules 
+    environment:
+      - REACT_APP_API_URL=http://backend:5000                 # Évite l'écrasement des dépendances
     networks:
       - app-network
     depends_on:

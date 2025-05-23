@@ -29,7 +29,7 @@ export default function TicketTech({ color }) {
     const fetchTickets = async () => {
       try {
         const token = localStorage.getItem('jwt_token');
-        const { data } = await axios.get('/allticketstec', {
+        const { data } = await axios.get('/api/allticketstec', {
           headers: {
             Authorization: `Bearer ${token}`, // si besoin
           }

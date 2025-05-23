@@ -18,7 +18,7 @@ export default function AvisClientTable({ color }) {
   useEffect(() => {
     const fetchAvis = async () => {
       try {
-        const response = await fetch('/getcom');
+        const response = await fetch('/api/getcom');
         const result = await response.json();
     
         if (result.success) {
@@ -46,7 +46,7 @@ export default function AvisClientTable({ color }) {
         return;
       }
   
-      const response = await fetch(`/deletecom/${selectedAvisToDelete.id}`, {
+      const response = await fetch(`/api/deletecom/${selectedAvisToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

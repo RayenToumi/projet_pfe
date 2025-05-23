@@ -5,7 +5,7 @@ export default function HeaderStatsTech() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    fetch("/stats")
+    fetch("/api/stats")
       .then((res) => res.json())
       .then((data) => setStats(data))
       .catch((err) => console.error("Erreur:", err));
