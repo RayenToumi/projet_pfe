@@ -62,9 +62,9 @@ module.exports.getAlltickets = async (req, res) => {
 
       const mapping = {
         IT: 'Informatique',
-        NET: 'reseaux',
-        DAB: 'DAB',
-        SC: 'support'
+        NET: 'Réseau',
+        SE: 'Sécurité',
+        SC: 'Support'
       };
 
       // Types de tickets compatibles avec la spécialité

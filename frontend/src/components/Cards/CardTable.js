@@ -718,7 +718,7 @@ export default function CardTable({ color }) {
                   <option value="Informatique">Informatique</option>
                   <option value="Support">Support</option>
                   <option value="Reseau">Réseau</option>
-                  <option value="DAB">DAB</option>
+                  <option value="Sécurité">Sécurité</option>
                 </select>
                 {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
                 </div>
@@ -868,7 +868,7 @@ export default function CardTable({ color }) {
       <option value="">-- Sélectionner --</option>
       <option value="Informatique">Informatique</option>
       <option value="Réseau">Réseau</option>
-      <option value="DAB">DAB</option>
+      <option value="Sécurité">Sécurité</option>
       <option value="Support">Support</option>
     </select>
     {editErrors.specialite && <p className="text-red-500 text-sm">{editErrors.specialite}</p>}

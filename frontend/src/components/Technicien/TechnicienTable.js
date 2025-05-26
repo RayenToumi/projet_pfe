@@ -378,7 +378,7 @@ export default function TechnicienTable({ color }) {
       case "reseaux":
       case "réseaux": // Gestion des accents
         return { ...style, backgroundColor: "#dcfce7", color: "#15803d" };
-      case "DAB":
+      case "Sécurité":
         return { ...style, backgroundColor: "#fef3c7", color: "#b45309" };
       case "support":
       case "support client":
@@ -617,7 +617,7 @@ export default function TechnicienTable({ color }) {
   <option value="informatique">Informatique</option>
   <option value="reseaux">Réseaux</option>
   <option value="support">Support client</option>
-  <option value="DAB">DAB</option>
+  <option value="DAB">Sécurité</option>
 </select>
 
          
@@ -811,7 +811,7 @@ export default function TechnicienTable({ color }) {
   <option value="informatique">Informatique</option>
   <option value="reseaux">Réseaux</option>
   <option value="support">Support client</option>
-  <option value="DAB">DAB</option>
+  <option value="DAB">Sécurité</option>
                 </select>
                 {errors.specialite && <p className="text-red-500 text-sm">{errors.specialite}</p>}
               </div>

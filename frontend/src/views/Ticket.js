@@ -139,7 +139,7 @@ function NewTicketForm() {
               <option value="">-- Sélectionner --</option>
               <option value="IT">Informatique</option>
               <option value="NET">Problème réseau</option>
-              <option value="DAB">Distributeur(DAB)</option>
+              <option value="SE">Sécurité</option>
               <option value="SC">Support client</option>
             </select>
             {errors.type && <div style={styles.error}>{errors.type}</div>}
@@ -154,7 +154,7 @@ function NewTicketForm() {
               <option value="">-- Choisir --</option>
               <option value="Urgent">Urgent</option>
               <option value="Normal">Normal</option>
-              <option value="Faible">Faible</option>
+       
             </select>
             {errors.urgence && <div style={styles.error}>{errors.urgence}</div>}
 
