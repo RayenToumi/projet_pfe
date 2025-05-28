@@ -1,46 +1,46 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  # Service Backend (Node.js)
+  # Service Backend 
   backend:
     build:
-      context: ./backend                   # Chemin vers le dossier backend
-      dockerfile: Dockerfile               # Nom du Dockerfile
+      context: ./backend 
+      dockerfile: Dockerfile 
     ports:
-      - "5000:5000"                        # Port exposé pour le backend
+      - "5000:5000" 
     volumes:
-      - ./backend:/app                     # Monte le code source du backend
-      - /app/node_modules                  # Évite l'écrasement des dépendances
-    environment:
-      - NODE_ENV=development
-      - MONGO_URI=mongodb://mongo:27017/stb_db  # Exemple de connexion MongoDB
-    networks:
-      - app-network
-    depends_on:
-      - mongo                             # Dépend de MongoDB (si utilisé)
-
-  # Service Frontend (React/Vue/Next.js/etc.)
-  frontend:
-    build:
-      context: ./frontend                  # Chemin vers le dossier frontend
-      dockerfile: Dockerfile               # Nom du Dockerfile
-    ports:
-      - "3000:3000"                        # Port exposé pour le frontend
-    volumes:
-      - ./frontend:/app                    # Monte le code source du frontend
+      - ./backend:/app 
       - /app/node_modules 
     environment:
-      - REACT_APP_API_URL=http://backend:5000                 # Évite l'écrasement des dépendances
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/stb_db 
     networks:
       - app-network
     depends_on:
-      - backend                            # Dépend du backend
+      - mongo 
 
-  # Base de données MongoDB (optionnel)
+  # Service Frontend 
+  frontend:
+    build:
+      context: ./frontend 
+      dockerfile: Dockerfile 
+    ports:
+      - "3000:3000" 
+    volumes:
+      - ./frontend:/app 
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://backend:5000
+    networks:
+      - app-network
+    depends_on:
+      - backend 
+
+  # Base de données MongoDB 
   mongo:
     image: mongo:latest
     volumes:
-      - mongo-data:/data/db               # Persistance des données
+      - mongo-data:/data/db 
     networks:
       - app-network
     environment:
@@ -52,4 +52,4 @@ networks:
     driver: bridge
 
 volumes:
-  mongo-data:                             # Volume pour MongoDB
+  mongo-data: 
