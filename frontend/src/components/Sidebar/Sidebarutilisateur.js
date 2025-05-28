@@ -1,10 +1,75 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTicket, faSignOutAlt, faUsers, faCog, faChartPie, faCalendarAlt, faToolbox } from '@fortawesome/free-solid-svg-icons';
 
 export default function Sidebar() {
-  const [collapseShow, setCollapseShow] = React.useState("hidden");
+const [collapseShow, setCollapseShow] = React.useState("hidden");
+  const history = useHistory();
+
+  const handleLogout = async () => {
+    try {
+      const userData = localStorage.getItem('user');
+      const token = localStorage.getItem('jwt_token');
+
+      console.log('Contenu de localStorage:');
+      console.log('- user:', userData);
+      console.log('- token:', token);
+
+      if (!userData && !token) {
+        throw new Error('Aucune donnée de session trouvée');
+      }
+
+      const missingItems = [];
+      if (!userData) missingItems.push('données utilisateur');
+      if (!token) missingItems.push('jeton JWT');
+      
+      if (missingItems.length > 0) {
+        throw new Error(`Éléments manquants : ${missingItems.join(', ')}`);
+      }
+
+      let user;
+      try {
+        user = JSON.parse(userData);
+        if (!user._id) throw new Error('ID utilisateur manquant');
+      } catch (parseError) {
+        console.error('Erreur de parsing des données utilisateur:', parseError);
+        throw new Error('Données utilisateur corrompues');
+      }
+
+      const response = await fetch(`/api/logout/${user._id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error(`Erreur serveur: ${response.status}`);
+
+      localStorage.removeItem('user');
+      localStorage.removeItem('jwt_token');
+      history.push('/login');
+
+    } catch (error) {
+      console.error('Journal complet d\'erreur:', error);
+      
+      let errorMessage = 'Erreur inconnue';
+      if (error.message.includes('manquants')) {
+        errorMessage = `Problème de session : ${error.message}`;
+      } else if (error.message.includes('corrompues')) {
+        errorMessage = 'Session invalide, veuillez vous reconnecter';
+      } else {
+        errorMessage = `Échec technique : ${error.message}`;
+      }
+      
+      alert(`Échec de la déconnexion :\n${errorMessage}`);
+    } finally {
+      setCollapseShow("hidden");
+    }
+  };
+
 
 
 
@@ -44,25 +109,6 @@ export default function Sidebar() {
           >
             {/* Navigation */}
             <ul className="md:flex-col md:min-w-full flex flex-col list-none space-y-2 mt-1">
-     
-
-         
-
-              <li>
-                <Link
-                  className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
-                  to="/utilisateur/MyTickets"
-                >
-                  <FontAwesomeIcon 
-                    icon={faTicket} 
-                    className="w-5 h-5 mr-3 text-purple-400" 
-                  />
-                  Tickets
-                </Link>
-              </li>
-
-         
-
               <li>
                 <Link
                   className="flex items-center p-4 text-gray-300 hover:bg-gray-700 rounded-xl transition-all duration-200"
@@ -77,7 +123,19 @@ export default function Sidebar() {
               </li>
             </ul>
 
-            
+              <div className="mt-8 border-t border-gray-700 pt-4">
+                                    <button
+                          onClick={handleLogout}
+                          className="flex items-center w-full p-4 text-red-500 hover:bg-gray-700 rounded-xl transition-all duration-200"
+                        >
+                          <FontAwesomeIcon 
+                            icon={faSignOutAlt} 
+                            className="w-5 h-5 mr-3 text-red-500" 
+                          />
+                          Déconnexion
+                        </button>
+                        
+                                  </div>
           </div>
         </div>
       </nav>
